@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Optimizer</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Image Optimizer using jpegli.wasm</title>
 </head>
 <body>
     <h1>Image Optimizer</h1>
     <input type="file" id="imageInput" accept="image/*">
-<button id="optimizeButton">Optimize Image</button>
-    <div id="originalSize"></div>
-    <div id="optimizedSize"></div>
-    <a id="downloadLink" download="optimized_image.jpg" style="display: none;">Download Optimized Image</a>
-
+    <button id="optimizeButton">Optimize Image</button>
+    <button id="downloadButton" style="display:none;">Download Optimized Image</button>
+    <div>
+        <p>Original Size: <span id="originalSize"></span> bytes</p>
+        <p>Optimized Size: <span id="optimizedSize"></span> bytes</p>
+    </div>
+    <img id="originalImage" style="max-width: 100%; display:none;">
+    <img id="optimizedImage" style="max-width: 100%; display:none;">
     <script src="app.js"></script>
 </body>
 </html>
