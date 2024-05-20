@@ -13,6 +13,21 @@
     <img id="originalImage" style="display: none;">
     <img id="optimizedImage" style="display: none;">
     <a id="downloadButton" style="display: none;">Download Optimized Image</a>
+<div id="settings">
+  <label for="qualitySlider">Quality</label>
+  <input type="range" id="qualitySlider" min="0.01" max="1" step="0.01" value="0.9" />
+  <span id="qualityValue">90%</span>
+
+  <label for="progressiveRenderingToggle">Progressive Rendering</label>
+  <input type="checkbox" id="progressiveRenderingToggle" checked />
+
+  <label for="dctMethodSelect">DCT Method</label>
+  <select id="dctMethodSelect">
+    <option value="0">Slow Integer</option>
+    <option value="1">Fast Integer</option>
+    <option value="2">Float</option>
+  </select>
+</div>
 
     <script src="optimizer.js"></script>
 </body>
