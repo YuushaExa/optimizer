@@ -1,8 +1,13 @@
+document.getElementById('qualitySlider').addEventListener('input', (e) => {
+    const qualityValue = e.target.value;
+    document.getElementById('qualityValue').textContent = `${(qualityValue * 100).toFixed(0)}%`;
+});
+
 async function loadWasm() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
         const buffer = await response.arrayBuffer();
-        const wasmModule = await WebAssembly.instantiate(buffer);
+        const wasmModule = await WebAssembly.instantiate(buffer, {});
         return wasmModule.instance.exports;
     } catch (error) {
         console.error('Error loading WebAssembly module:', error);
@@ -26,14 +31,18 @@ document.getElementById('optimizeButton').addEventListener('click', async () => 
     const originalSize = file.size;
     document.getElementById('originalSize').textContent = `Original Size: ${originalSize} bytes`;
 
+    const quality = parseFloat(document.getElementById('qualitySlider').value);
+    const progressiveRendering = document.getElementById('progressiveRenderingToggle').checked;
+    const dctMethod = parseInt(document.getElementById('dctMethodSelect').value);
+
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
             const arrayBuffer = e.target.result;
             const originalImage = new Uint8Array(arrayBuffer);
 
-            // Assuming jpegli.encode() and jpegli.getOptimizedImageLength() are available
-            const optimizedImagePtr = jpegli.encode(originalImage.byteOffset, originalImage.length);
+            // Assuming jpegli.encode() and jpegli.decode() are available
+            const optimizedImagePtr = jpegli.encode(originalImage.byteOffset, originalImage.length, quality, progressiveRendering, dctMethod);
             const optimizedImageLength = jpegli.getOptimizedImageLength();
             const optimizedImage = new Uint8Array(jpegli.memory.buffer, optimizedImagePtr, optimizedImageLength);
 
