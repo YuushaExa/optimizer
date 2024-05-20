@@ -1,15 +1,9 @@
-// Function to optimize image using jpegli.wasm
-async function optimizeImageWithJpegli(imageFile) {
-    return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const imageBuffer = reader.result;
-            const optimizedImageBuffer = await optimizeWithJpegliWasm(imageBuffer);
-            const optimizedImageBlob = new Blob([optimizedImageBuffer], { type: 'image/jpeg' });
-            resolve(optimizedImageBlob);
-        };
-        reader.readAsArrayBuffer(imageFile);
-    });
+// Function to load jpegli.wasm module
+async function loadJpegliModule() {
+    const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
+    const bytes = await response.arrayBuffer();
+    const wasmModule = await WebAssembly.instantiate(bytes, {});
+    return wasmModule.instance.exports;
 }
 
 // Function to optimize image using jpegli.wasm
@@ -38,12 +32,18 @@ async function optimizeWithJpegliWasm(imageBuffer) {
     return optimizedImageBuffer;
 }
 
-// Function to load jpegli.wasm module
-async function loadJpegliModule() {
-    const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
-    const bytes = await response.arrayBuffer();
-    const wasmModule = await WebAssembly.instantiate(bytes, {});
-    return wasmModule.instance.exports;
+// Function to handle image optimization
+async function optimizeImageWithJpegli(imageFile) {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = async function() {
+            const imageBuffer = reader.result;
+            const optimizedImageBuffer = await optimizeWithJpegliWasm(imageBuffer);
+            const optimizedImageBlob = new Blob([optimizedImageBuffer], { type: 'image/jpeg' });
+            resolve(optimizedImageBlob);
+        };
+        reader.readAsArrayBuffer(imageFile);
+    });
 }
 
 // Function to handle image optimization
