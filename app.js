@@ -1,5 +1,5 @@
 async function loadWasm() {
-    const response = await fetch('https://github.com/YuushaExa/optimizer/raw/main/jpegli.wasm');
+    const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
     const buffer = await response.arrayBuffer();
     const wasmModule = await WebAssembly.instantiate(buffer);
     return wasmModule.instance.exports;
