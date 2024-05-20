@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Optimizer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Image Optimizer</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="optimizeImage()">Optimize Image</button>
+    <div id="originalSize"></div>
+    <div id="optimizedSize"></div>
+    <a id="downloadLink" download="optimized_image.jpg" style="display: none;">Download Optimized Image</a>
+
+    <script src="app.js"></script>
+</body>
+</html>
