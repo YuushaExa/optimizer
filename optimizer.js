@@ -7,7 +7,18 @@ async function loadWasm() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
         const buffer = await response.arrayBuffer();
-        const wasmModule = await WebAssembly.instantiate(buffer, {});
+        const wasmModule = await WebAssembly.instantiate(buffer, {
+            wasi_snapshot_preview1: {
+                // Provide necessary imports if needed. This is a minimal example.
+                fd_write: () => {},
+                fd_close: () => {},
+                fd_seek: () => {},
+                fd_read: () => {},
+                environ_sizes_get: () => {},
+                environ_get: () => {},
+                proc_exit: () => {}
+            }
+        });
         return wasmModule.instance.exports;
     } catch (error) {
         console.error('Error loading WebAssembly module:', error);
