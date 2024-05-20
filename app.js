@@ -74,5 +74,3 @@ async function optimizeImage() {
     downloadLink.style.display = 'inline';
 }
 
-// Event listener for the optimize button
-document.getElementById('optimizeButton').addEventListener('click', optimizeImage);
