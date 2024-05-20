@@ -1,77 +1,53 @@
-// Function to load jpegli.wasm module
-async function loadJpegliModule() {
-    const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
-    const bytes = await response.arrayBuffer();
-    const wasmModule = await WebAssembly.instantiate(bytes, {});
+async function loadWasm() {
+    const response = await fetch('jpegli.wasm');
+    const buffer = await response.arrayBuffer();
+    const wasmModule = await WebAssembly.instantiate(buffer);
     return wasmModule.instance.exports;
 }
 
-// Function to optimize image using jpegli.wasm
-async function optimizeWithJpegliWasm(imageBuffer) {
-    // Load jpegli.wasm module
-    const jpegliModule = await loadJpegliModule();
+let jpegli = null;
+loadWasm().then(exports => {
+    jpegli = exports;
+});
 
-    // Convert image buffer to Uint8Array
-    const imageUint8Array = new Uint8Array(imageBuffer);
-
-    // Allocate memory for the image buffer in wasm memory
-    const imagePtr = jpegliModule._malloc(imageUint8Array.length);
-    jpegliModule.HEAPU8.set(imageUint8Array, imagePtr);
-
-    // Call the optimize function in jpegli.wasm
-    const optimizedImagePtr = jpegliModule._optimize_image(imagePtr, imageUint8Array.length);
-
-    // Get the optimized image buffer from wasm memory
-    const optimizedImageLength = jpegliModule._get_optimized_image_length();
-    const optimizedImageBuffer = jpegliModule.HEAPU8.subarray(optimizedImagePtr, optimizedImagePtr + optimizedImageLength);
-
-    // Free memory
-    jpegliModule._free(imagePtr);
-    jpegliModule._free(optimizedImagePtr);
-
-    return optimizedImageBuffer;
-}
-
-// Function to handle image optimization
-async function optimizeImageWithJpegli(imageFile) {
-    return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = async function() {
-            const imageBuffer = reader.result;
-            const optimizedImageBuffer = await optimizeWithJpegliWasm(imageBuffer);
-            const optimizedImageBlob = new Blob([optimizedImageBuffer], { type: 'image/jpeg' });
-            resolve(optimizedImageBlob);
-        };
-        reader.readAsArrayBuffer(imageFile);
-    });
-}
-
-// Function to handle image optimization
-async function optimizeImage() {
-    const imageInput = document.getElementById('imageInput');
-    const originalSizeDiv = document.getElementById('originalSize');
-    const optimizedSizeDiv = document.getElementById('optimizedSize');
-    const downloadLink = document.getElementById('downloadLink');
-
-    if (imageInput.files.length === 0) {
-        alert('Please select an image file.');
+document.getElementById('optimizeButton').addEventListener('click', async () => {
+    const fileInput = document.getElementById('imageInput');
+    if (fileInput.files.length === 0) {
+        alert('Please upload an image.');
         return;
     }
 
-    const imageFile = imageInput.files[0];
+    const file = fileInput.files[0];
+    const originalSize = file.size;
+    document.getElementById('originalSize').textContent = originalSize;
 
-    // Calculate original size
-    originalSizeDiv.textContent = `Original Size: ${imageFile.size / 1024} KB`;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const arrayBuffer = e.target.result;
+        const originalImage = new Uint8Array(arrayBuffer);
 
-    // Optimizing image using jpegli.wasm
-    const optimizedImageFile = await optimizeImageWithJpegli(imageFile);
+        // Assume jpegli.encode() and jpegli.decode() are available and correctly handle the image data
+        // You might need to adjust according to the actual API provided by the wasm module
 
-    // Calculate optimized size
-    optimizedSizeDiv.textContent = `Optimized Size: ${optimizedImageFile.size / 1024} KB`;
+        const optimizedImage = jpegli.encode(originalImage);
+        const optimizedSize = optimizedImage.length;
+        document.getElementById('optimizedSize').textContent = optimizedSize;
 
-    // Display download link
-    downloadLink.href = URL.createObjectURL(optimizedImageFile);
-    downloadLink.style.display = 'inline';
-}
+        const blob = new Blob([optimizedImage], { type: 'image/jpeg' });
+        const url = URL.createObjectURL(blob);
 
-document.getElementById('optimizeButton').addEventListener('click', optimizeImage);
+        const img = document.getElementById('optimizedImage');
+        img.src = url;
+        img.style.display = 'block';
+
+        const downloadButton = document.getElementById('downloadButton');
+        downloadButton.style.display = 'inline';
+        downloadButton.href = url;
+        downloadButton.download = 'optimized_image.jpg';
+    };
+    reader.readAsArrayBuffer(file);
+
+    const originalImg = document.getElementById('originalImage');
+    originalImg.src = URL.createObjectURL(file);
+    originalImg.style.display = 'block';
+});
