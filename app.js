@@ -74,3 +74,4 @@ async function optimizeImage() {
     downloadLink.style.display = 'inline';
 }
 
+document.getElementById('optimizeButton').addEventListener('click', optimizeImage);
