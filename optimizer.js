@@ -32,7 +32,7 @@ document.getElementById('optimizeButton').addEventListener('click', async () => 
             const arrayBuffer = e.target.result;
             const originalImage = new Uint8Array(arrayBuffer);
 
-            // Assuming jpegli.encode() and jpegli.decode() are available
+            // Assuming jpegli.encode() and jpegli.getOptimizedImageLength() are available
             const optimizedImagePtr = jpegli.encode(originalImage.byteOffset, originalImage.length);
             const optimizedImageLength = jpegli.getOptimizedImageLength();
             const optimizedImage = new Uint8Array(jpegli.memory.buffer, optimizedImagePtr, optimizedImageLength);
