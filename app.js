@@ -1,8 +1,13 @@
 async function loadWasm() {
-    const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
-    const buffer = await response.arrayBuffer();
-    const wasmModule = await WebAssembly.instantiate(buffer);
-    return wasmModule.instance.exports;
+    try {
+        const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
+        const buffer = await response.arrayBuffer();
+        const wasmModule = await WebAssembly.instantiate(buffer);
+        return wasmModule.instance.exports;
+    } catch (error) {
+        console.error('Error loading WebAssembly module:', error);
+        alert('Failed to load WebAssembly module.');
+    }
 }
 
 let jpegli = null;
@@ -19,31 +24,37 @@ document.getElementById('optimizeButton').addEventListener('click', async () => 
 
     const file = fileInput.files[0];
     const originalSize = file.size;
-    document.getElementById('originalSize').textContent = originalSize;
+    document.getElementById('originalSize').textContent = `Original Size: ${originalSize} bytes`;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-        const arrayBuffer = e.target.result;
-        const originalImage = new Uint8Array(arrayBuffer);
+        try {
+            const arrayBuffer = e.target.result;
+            const originalImage = new Uint8Array(arrayBuffer);
 
-        // Assume jpegli.encode() and jpegli.decode() are available and correctly handle the image data
-        // You might need to adjust according to the actual API provided by the wasm module
+            // Assuming jpegli.encode() and jpegli.decode() are available
+            const optimizedImagePtr = jpegli.encode(originalImage.byteOffset, originalImage.length);
+            const optimizedImageLength = jpegli.getOptimizedImageLength();
+            const optimizedImage = new Uint8Array(jpegli.memory.buffer, optimizedImagePtr, optimizedImageLength);
 
-        const optimizedImage = jpegli.encode(originalImage);
-        const optimizedSize = optimizedImage.length;
-        document.getElementById('optimizedSize').textContent = optimizedSize;
+            const optimizedSize = optimizedImage.length;
+            document.getElementById('optimizedSize').textContent = `Optimized Size: ${optimizedSize} bytes`;
 
-        const blob = new Blob([optimizedImage], { type: 'image/jpeg' });
-        const url = URL.createObjectURL(blob);
+            const blob = new Blob([optimizedImage], { type: 'image/jpeg' });
+            const url = URL.createObjectURL(blob);
 
-        const img = document.getElementById('optimizedImage');
-        img.src = url;
-        img.style.display = 'block';
+            const img = document.getElementById('optimizedImage');
+            img.src = url;
+            img.style.display = 'block';
 
-        const downloadButton = document.getElementById('downloadButton');
-        downloadButton.style.display = 'inline';
-        downloadButton.href = url;
-        downloadButton.download = 'optimized_image.jpg';
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.style.display = 'inline';
+            downloadButton.href = url;
+            downloadButton.download = 'optimized_image.jpg';
+        } catch (error) {
+            console.error('Error optimizing image:', error);
+            alert('Failed to optimize image.');
+        }
     };
     reader.readAsArrayBuffer(file);
 
