@@ -42,7 +42,7 @@ async function optimizeWithJpegliWasm(imageBuffer) {
 async function loadJpegliModule() {
     const response = await fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm');
     const bytes = await response.arrayBuffer();
-    const wasmModule = await WebAssembly.instantiate(bytes);
+    const wasmModule = await WebAssembly.instantiate(bytes, {});
     return wasmModule.instance.exports;
 }
 
