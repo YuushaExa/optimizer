@@ -1,5 +1,5 @@
 // Wait for the DOM to be fully loaded
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const fileInput = document.getElementById("fileInput");
   const optimizeButton = document.getElementById("optimizeButton");
   const sizeInfoDiv = document.getElementById("sizeInfo");
@@ -12,7 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Function to compress the uploaded image
   const compressImage = async (file) => {
     try {
-      const imagePool = new window.squoosh.ImagePool();
+      // Dynamically load the Squoosh library
+      const squooshLib = await import('https://unpkg.com/@squoosh/lib');
+      const { ImagePool } = squooshLib;
+      
+      const imagePool = new ImagePool();
       const image = imagePool.ingestImage(file);
 
       // Preprocessing and encoding options
