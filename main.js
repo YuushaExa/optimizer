@@ -53,13 +53,36 @@ function blobToBase64(blob) {
 
 async function showOutput (imageBuffer, outputType) {
   const preview = document.querySelector('#preview');
-  const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-  const base64String = await blobToBase64(imageBlob);
-  const previewImg = document.createElement('img');
-  previewImg.src = base64String;
+  const imageContainer = document.createElement('div');
+  imageContainer.classList.add('img-comp-container');
+
+  // Create the old image
+  const oldImageDiv = document.createElement('div');
+  oldImageDiv.classList.add('img-comp-img');
+  const oldImage = new Image();
+  oldImage.src = preview.querySelector('img').src; // Assuming the old image is already displayed
+  oldImageDiv.appendChild(oldImage);
+
+  // Create the new image
+  const newImageDiv = document.createElement('div');
+  newImageDiv.classList.add('img-comp-img', 'img-comp-overlay');
+  const newImageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
+  const newImage = new Image();
+  newImage.src = await blobToBase64(newImageBlob);
+  newImageDiv.appendChild(newImage);
+
+  // Append both images to the container
+  imageContainer.appendChild(oldImageDiv);
+  imageContainer.appendChild(newImageDiv);
+
+  // Clear previous output and append the image container
   preview.innerHTML = '';
-  preview.appendChild(previewImg);
+  preview.appendChild(imageContainer);
+
+  // Initialize image comparison slider
+  initComparisons();
 }
+
 
 async function initForm() {
   const form = document.querySelector('form');
