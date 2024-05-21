@@ -68,8 +68,8 @@ async function showOutput(imageBuffer, outputType) {
   oldImageContainer.classList.add('img-comp-img');
   const oldImg = document.createElement('img');
   oldImg.src = oldImgSrc; // Use the data URL of the old image
-  oldImg.width = 300;
-  oldImg.height = 200;
+  oldImg.width = 1300;
+  oldImg.height = 1200;
   oldImageContainer.appendChild(oldImg);
 
   // Create new image container
@@ -77,8 +77,8 @@ async function showOutput(imageBuffer, outputType) {
   newImageContainer.classList.add('img-comp-img', 'img-comp-overlay');
   const newImg = document.createElement('img');
   newImg.src = base64String;
-  newImg.width = 300;
-  newImg.height = 200;
+  newImg.width = 1300;
+  newImg.height = 1200;
   newImageContainer.appendChild(newImg);
 
   // Append old and new image containers to comparison container
