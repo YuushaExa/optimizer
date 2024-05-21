@@ -110,7 +110,6 @@ function readFileAsDataURL(file) {
 document.addEventListener("DOMContentLoaded", function() {
   main();
 });
-}
 
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
