@@ -1,52 +1,84 @@
-async function compressImage(file) {
-  const squooshLib = window.squoosh;
-  const { ImagePool } = squooshLib;
-  const imagePool = new ImagePool();
-  const image = imagePool.ingestImage(file);
+// Wait for the DOM to be fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+  const fileInput = document.getElementById("fileInput");
+  const optimizeButton = document.getElementById("optimizeButton");
+  const sizeInfoDiv = document.getElementById("sizeInfo");
+  const outputDiv = document.getElementById("output");
+  const downloadButton = document.getElementById("downloadButton");
 
-  await image.encode({
-    mozjpeg: { quality: 75 },
+  let originalSize = 0;
+  let compressedSize = 0;
+
+  // Function to compress the uploaded image
+  const compressImage = async (file) => {
+    try {
+      const imagePool = new window.squoosh.ImagePool();
+      const image = imagePool.ingestImage(file);
+
+      // Preprocessing and encoding options
+      const preprocessOptions = {
+        resize: {
+          width: 100, // Adjust as needed
+          height: 100, // Adjust as needed
+        },
+      };
+
+      const encodeOptions = {
+        mozjpeg: {}, // Empty object means 'use default settings'
+      };
+
+      // Preprocess and encode the image
+      await image.preprocess(preprocessOptions);
+      const result = await image.encode(encodeOptions);
+
+      // Display compressed image
+      const compressedUrl = URL.createObjectURL(
+        new Blob([result.encodedWith.mozjpeg.binary], { type: "image/jpeg" })
+      );
+      outputDiv.innerHTML = `<img src="${compressedUrl}" alt="Compressed Image" width="100">`;
+
+      // Calculate and display size difference
+      compressedSize = result.encodedWith.mozjpeg.size;
+      sizeInfoDiv.innerText = `Original Size: ${formatBytes(originalSize)}\nCompressed Size: ${formatBytes(compressedSize)}\nSize Reduction: ${((1 - compressedSize / originalSize) * 100).toFixed(2)}%`;
+
+      // Show download button
+      downloadButton.style.display = 'inline-block';
+      downloadButton.href = compressedUrl;
+      downloadButton.download = 'optimized_image.jpg';
+
+      // Close the ImagePool
+      await imagePool.close();
+    } catch (error) {
+      console.error("Error compressing image:", error);
+    }
+  };
+
+  // Function to format bytes
+  const formatBytes = (bytes) => {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes === 0) return '0 Byte';
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  };
+
+  // Event listener for file input change
+  fileInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      originalSize = file.size;
+      optimizeButton.disabled = false;
+      sizeInfoDiv.innerText = `Original Size: ${formatBytes(originalSize)}`;
+    } else {
+      optimizeButton.disabled = true;
+      sizeInfoDiv.innerText = '';
+    }
   });
 
-  const compressedImage = await image.encodedWith.mozjpeg;
-  return compressedImage.binary;
-}
-
-function formatBytes(bytes) {
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  if (bytes === 0) return '0 Byte';
-  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-  return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-}
-
-document.getElementById('fileInput').addEventListener('change', (event) => {
-  const file = event.target.files[0];
-  const originalImage = document.getElementById('originalImage');
-  originalImage.src = URL.createObjectURL(file);
-  originalImage.style.display = 'block';
-
-  document.getElementById('optimizeButton').disabled = false;
-  document.getElementById('sizeInfo').innerText = `Original Size: ${formatBytes(file.size)}`;
-});
-
-document.getElementById('optimizeButton').addEventListener('click', async () => {
-  const file = document.getElementById('fileInput').files[0];
-  const arrayBuffer = await file.arrayBuffer();
-  const compressedImageBuffer = await compressImage(new Uint8Array(arrayBuffer));
-
-  const compressedBlob = new Blob([compressedImageBuffer], { type: 'image/jpeg' });
-  const compressedUrl = URL.createObjectURL(compressedBlob);
-  const compressedImage = document.getElementById('compressedImage');
-  compressedImage.src = compressedUrl;
-  compressedImage.style.display = 'block';
-
-  const originalSize = file.size;
-  const compressedSize = compressedBlob.size;
-
-  document.getElementById('sizeInfo').innerText += `\nCompressed Size: ${formatBytes(compressedSize)}\nSize Reduction: ${(100 - (compressedSize / originalSize) * 100).toFixed(2)}%`;
-
-  const downloadButton = document.getElementById('downloadButton');
-  downloadButton.href = compressedUrl;
-  downloadButton.download = 'optimized_image.jpg';
-  downloadButton.style.display = 'inline-block';
+  // Event listener for optimize button click
+  optimizeButton.addEventListener("click", () => {
+    const file = fileInput.files[0];
+    if (file) {
+      compressImage(file);
+    }
+  });
 });
