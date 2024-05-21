@@ -46,7 +46,7 @@
         }
 
         async function optimizeImageData(imageFile, optimizationParams) {
-            const wasmUrl = 'https://example.com/path/to/jpegli.wasm';  // Replace with the correct URL to your .wasm file
+            const wasmUrl = 'https://test1211.pages.dev/jpegli.wasm';  // Replace with the correct URL to your .wasm file
             const wasmModule = await WebAssembly.compileStreaming(fetch(wasmUrl));
 
             const instance = await WebAssembly.instantiate(wasmModule, {
