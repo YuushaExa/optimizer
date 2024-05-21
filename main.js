@@ -68,8 +68,6 @@ async function showOutput(imageBuffer, outputType) {
   oldImageContainer.classList.add('img-comp-img');
   const oldImg = document.createElement('img');
   oldImg.src = oldImgSrc; // Use the data URL of the old image
-  oldImg.width = 1300;
-  oldImg.height = 1200;
   oldImageContainer.appendChild(oldImg);
 
   // Create new image container
@@ -77,19 +75,41 @@ async function showOutput(imageBuffer, outputType) {
   newImageContainer.classList.add('img-comp-img', 'img-comp-overlay');
   const newImg = document.createElement('img');
   newImg.src = base64String;
-  newImg.width = 1300;
-  newImg.height = 1200;
   newImageContainer.appendChild(newImg);
 
   // Append old and new image containers to comparison container
   comparisonContainer.appendChild(oldImageContainer);
   comparisonContainer.appendChild(newImageContainer);
 
+  // Append slider to comparison container
+  const slider = document.createElement('div');
+  slider.classList.add('img-comp-slider');
+  comparisonContainer.appendChild(slider);
+
+  // Append line to comparison container
+  const line = document.createElement('div');
+  line.classList.add('img-comp-line');
+  comparisonContainer.appendChild(line);
+
   // Append comparison container to document body or any desired container
   document.body.appendChild(comparisonContainer);
 
   // Initialize comparisons
   initComparisons();
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  main();
+});
 }
 
 function readFileAsDataURL(file) {
