@@ -52,7 +52,6 @@ function blobToBase64(blob) {
 }
 
 async function showOutput(imageBuffer, outputType) {
-  const preview = document.querySelector('#preview');
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
 
@@ -64,7 +63,9 @@ async function showOutput(imageBuffer, outputType) {
   const oldImageContainer = document.createElement('div');
   oldImageContainer.classList.add('img-comp-img');
   const oldImg = document.createElement('img');
-  oldImg.src = preview.querySelector('img').src; // Use the source of the previously displayed image
+  oldImg.src = 'img_snow.jpg'; // You can set a placeholder image here
+  oldImg.width = 300;
+  oldImg.height = 200;
   oldImageContainer.appendChild(oldImg);
 
   // Create new image container
@@ -72,15 +73,16 @@ async function showOutput(imageBuffer, outputType) {
   newImageContainer.classList.add('img-comp-img', 'img-comp-overlay');
   const newImg = document.createElement('img');
   newImg.src = base64String;
+  newImg.width = 300;
+  newImg.height = 200;
   newImageContainer.appendChild(newImg);
 
   // Append old and new image containers to comparison container
   comparisonContainer.appendChild(oldImageContainer);
   comparisonContainer.appendChild(newImageContainer);
 
-  // Clear previous preview content and append comparison container
-  preview.innerHTML = '';
-  preview.appendChild(comparisonContainer);
+  // Append comparison container to document body or any desired container
+  document.body.appendChild(comparisonContainer);
 
   // Initialize comparisons
   initComparisons();
