@@ -51,43 +51,15 @@ function blobToBase64(blob) {
   });
 }
 
-async function showOutput(imageBuffer, outputType) {
-  const originalImage = document.createElement('img');
-  const convertedImage = document.createElement('img');
-
+async function showOutput (imageBuffer, outputType) {
+  const preview = document.querySelector('#preview');
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
-
-  originalImage.src = base64String;
-  convertedImage.src = base64String;
-
-  const preview = document.querySelector('#preview');
+  const previewImg = document.createElement('img');
+  previewImg.src = base64String;
   preview.innerHTML = '';
-  preview.appendChild(originalImage);
-  preview.appendChild(convertedImage);
-
-  originalImage.id = "originalImage";
-  convertedImage.id = "convertedImage";
-  const divider = document.createElement('div');
-  divider.classList.add('divider');
-  preview.appendChild(divider);
-
-  const dragDivider = (e) => {
-    const previewRect = preview.getBoundingClientRect();
-    const dividerPosition = (e.clientX - previewRect.left) / previewRect.width;
-    divider.style.left = `${dividerPosition * 100}%`;
-    originalImage.style.width = `${dividerPosition * 100}%`;
-    convertedImage.style.width = `${(1 - dividerPosition) * 100}%`;
-  };
-
-  divider.addEventListener('mousedown', () => {
-    window.addEventListener('mousemove', dragDivider);
-    window.addEventListener('mouseup', () => {
-      window.removeEventListener('mousemove', dragDivider);
-    });
-  });
+  preview.appendChild(previewImg);
 }
-
 
 async function initForm() {
   const form = document.querySelector('form');
