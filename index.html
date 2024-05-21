@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MozJPEG Compression</title>
+  <title>Image Compression</title>
 </head>
 <body>
   <input type="file" id="fileInput" accept="image/*">
   <button id="optimizeButton" disabled>Optimize Image</button>
   <div id="sizeInfo"></div>
-  <img id="originalImage" alt="Original Image" style="display: none;">
-  <img id="compressedImage" alt="Compressed Image" style="display: none;">
+  <div id="output"></div>
   <button id="downloadButton" style="display: none;">Download Optimized Image</button>
   <!-- Include Squoosh library directly -->
-<script src="https://unpkg.com/@squoosh/lib"></script>
-  <script src="compress.js"></script>
+  <script src="https://unpkg.com/@squoosh/lib"></script>
+  <script src="script.js"></script>
 </body>
 </html>
