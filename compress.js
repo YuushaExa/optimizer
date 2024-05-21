@@ -1,5 +1,6 @@
 async function compressImage(file) {
-  const { ImagePool } = window.squoosh;
+  const squooshLib = window.squoosh;
+  const { ImagePool } = squooshLib;
   const imagePool = new ImagePool();
   const image = imagePool.ingestImage(file);
 
