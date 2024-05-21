@@ -55,6 +55,9 @@ async function showOutput(imageBuffer, outputType) {
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
 
+  // Get the old image source from the form
+  const oldImgSrc = document.querySelector('input[name="file"]').value;
+
   // Create container for comparison
   const comparisonContainer = document.createElement('div');
   comparisonContainer.classList.add('img-comp-container');
@@ -63,7 +66,7 @@ async function showOutput(imageBuffer, outputType) {
   const oldImageContainer = document.createElement('div');
   oldImageContainer.classList.add('img-comp-img');
   const oldImg = document.createElement('img');
-  oldImg.src = 'img_snow.jpg'; // You can set a placeholder image here
+  oldImg.src = oldImgSrc; // Use the source of the old image
   oldImg.width = 300;
   oldImg.height = 200;
   oldImageContainer.appendChild(oldImg);
@@ -87,6 +90,7 @@ async function showOutput(imageBuffer, outputType) {
   // Initialize comparisons
   initComparisons();
 }
+
 
 
 async function initForm() {
