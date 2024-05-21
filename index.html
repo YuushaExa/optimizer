@@ -8,12 +8,15 @@
 <body>
     <h1>Image Optimizer</h1>
     <input type="file" id="image-file-input" accept="image/jpeg">
-    <button onclick="optimizeAndDownload()">Optimize Image</button>
+    <button onclick="optimizeImage()">Optimize Image</button>
+    <button id="download-button" onclick="downloadImage()" disabled>Download Optimized Image</button>
     <p>Original Image Size: <span id="original-size"></span></p>
     <p>Optimized Image Size: <span id="optimized-size"></span></p>
     
     <script>
-        async function optimizeAndDownload() {
+        let optimizedImageData;
+
+        async function optimizeImage() {
             const imageFile = document.getElementById('image-file-input').files[0];
             if (!imageFile) {
                 alert('Please select an image file.');
@@ -32,110 +35,81 @@
                 const originalSize = imageFile.size;
                 document.getElementById('original-size').textContent = formatBytes(originalSize);
 
-                const optimizedImageData = await optimizeImage(imageFile, optimizationParams);
+                optimizedImageData = await optimizeImageData(imageFile, optimizationParams);
                 const optimizedSize = optimizedImageData.length;
                 document.getElementById('optimized-size').textContent = formatBytes(optimizedSize);
 
-                downloadImage(optimizedImageData, 'optimized_image.jpg');
+                document.getElementById('download-button').disabled = false;
             } catch (error) {
                 console.error('Error optimizing image:', error);
             }
         }
 
-        async function optimizeImage(imageFile, optimizationParams) {
-// Define function for optimizing JPEG images on the client-side
-async function optimizeImage(imageFile, optimizationParams) {
-    // Compile WebAssembly module
-    const wasmModule = await WebAssembly.compileStreaming(fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm'));
+        async function optimizeImageData(imageFile, optimizationParams) {
+            const wasmModule = await WebAssembly.compileStreaming(fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm'));
 
-    // Instantiate WebAssembly module
-    const instance = await WebAssembly.instantiate(wasmModule, {
-        env: {
-            memory: new WebAssembly.Memory({initial: 256, maximum: 10000, shared: true})
-        },
-        wasi: {},
-        wasi_snapshot_preview1: { // Define necessary imports
-            fd_prestat_get: () => {}
-        }
-    });
+            const instance = await WebAssembly.instantiate(wasmModule, {
+                env: {
+                    memory: new WebAssembly.Memory({ initial: 256, maximum: 10000, shared: true })
+                },
+                wasi_snapshot_preview1: {
+                    fd_prestat_get: () => {}
+                }
+            });
 
-    // Initialize WASI
-    try {
-        instance.exports.initialize();
-    } catch (error) {
-        console.error("Exception while initializing WASI: " + error.message);
-    }
+            instance.exports.initialize();
 
-    // Extract necessary functions and memory from the instance
-    const { malloc, encode, free } = instance.exports;
-    const memory = new Uint8Array(instance.exports.memory.buffer);
+            const { malloc, encode, free } = instance.exports;
+            const memory = new Uint8Array(instance.exports.memory.buffer);
 
-    // Extract optimization parameters
-    const { quality, progressiveLevel, DTCMethod, adaptiveQuantization, fancyDownsampling } = optimizationParams;
+            const { quality, progressiveLevel, DTCMethod, adaptiveQuantization, fancyDownsampling } = optimizationParams;
 
-    // Read image data
-    const imageData = await readImageData(imageFile);
+            const imageData = await readImageData(imageFile);
 
-    // Prepare image data for optimization
-    const imagePointer = malloc(imageData.data.length);
-    memory.set(imageData.data, imagePointer);
+            const imagePointer = malloc(imageData.data.length);
+            memory.set(imageData.data, imagePointer);
 
-    // Optimize the image
-    const outputPointer = malloc(8);
-    const encodedPointer = encode(imagePointer, imageData.width, imageData.height, 2, 2, outputPointer, quality, progressiveLevel, adaptiveQuantization, fancyDownsampling, DTCMethod);
-    const outputDataLength = new Uint32Array(memory.buffer, outputPointer, 2)[0];
-    const optimizedImageData = new Uint8Array(memory.buffer, encodedPointer, outputDataLength);
+            const outputPointer = malloc(8);
+            const encodedPointer = encode(imagePointer, imageData.width, imageData.height, 2, 2, outputPointer, quality, progressiveLevel, adaptiveQuantization, fancyDownsampling, DTCMethod);
+            const outputDataLength = new Uint32Array(memory.buffer, outputPointer, 2)[0];
+            const optimizedImageData = new Uint8Array(memory.buffer, encodedPointer, outputDataLength);
 
-    // Free memory
-    free(imagePointer);
-    free(outputPointer);
-    free(encodedPointer);
+            free(imagePointer);
+            free(outputPointer);
+            free(encodedPointer);
 
-    return optimizedImageData;
-}
-
-// Function to read image data
-function readImageData(imageFile) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                const imageData = ctx.getImageData(0, 0, img.width, img.height);
-                resolve({ data: imageData.data, width: img.width, height: img.height });
-            };
-            img.onerror = (error) => {
-                reject(error);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(imageFile);
-    });
-}
-
-// Example usage:
-const imageFile = document.getElementById('image-file-input').files[0];
-const optimizationParams = { quality: 80, progressiveLevel: 2, DTCMethod: 1, adaptiveQuantization: 3, fancyDownsampling: 1 };
-optimizeImage(imageFile, optimizationParams)
-    .then((optimizedImageData) => {
-        // Display or download optimized image
-    })
-    .catch((error) => {
-        console.error('Error optimizing image:', error);
-    });
+            return optimizedImageData;
         }
 
-        function downloadImage(imageData, fileName) {
-            const blob = new Blob([imageData], { type: 'image/jpeg' });
+        function readImageData(imageFile) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                        resolve({ data: imageData.data, width: img.width, height: img.height });
+                    };
+                    img.onerror = (error) => {
+                        reject(error);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(imageFile);
+            });
+        }
+
+        function downloadImage() {
+            const blob = new Blob([optimizedImageData], { type: 'image/jpeg' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = fileName;
+            a.download = 'optimized_image.jpg';
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
