@@ -13,22 +13,115 @@
     <img id="originalImage" style="display: none;">
     <img id="optimizedImage" style="display: none;">
     <a id="downloadButton" style="display: none;">Download Optimized Image</a>
-<div id="settings">
-  <label for="qualitySlider">Quality</label>
-  <input type="range" id="qualitySlider" min="0.01" max="1" step="0.01" value="0.9" />
-  <span id="qualityValue">90%</span>
+    <div id="settings">
+        <label for="qualitySlider">Quality</label>
+        <input type="range" id="qualitySlider" min="0.01" max="1" step="0.01" value="0.9" />
+        <span id="qualityValue">90%</span>
 
-  <label for="progressiveRenderingToggle">Progressive Rendering</label>
-  <input type="checkbox" id="progressiveRenderingToggle" checked />
+        <label for="progressiveRenderingToggle">Progressive Rendering</label>
+        <input type="checkbox" id="progressiveRenderingToggle" checked />
 
-  <label for="dctMethodSelect">DCT Method</label>
-  <select id="dctMethodSelect">
-    <option value="0">Slow Integer</option>
-    <option value="1">Fast Integer</option>
-    <option value="2">Float</option>
-  </select>
-</div>
+        <label for="dctMethodSelect">DCT Method</label>
+        <select id="dctMethodSelect">
+            <option value="0">Slow Integer</option>
+            <option value="1">Fast Integer</option>
+            <option value="2">Float</option>
+        </select>
+    </div>
 
-    <script src="optimizer.js"></script>
+    <script>
+        // JavaScript code for WebAssembly, Image Handling, and Encoding
+
+        // WebAssembly Part
+        function loadWebAssembly(fileName) {
+            return fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm')
+                .then(response => response.arrayBuffer())
+                .then(buffer => WebAssembly.compile(buffer))
+                .then(module => {
+                    const instance = new WebAssembly.Instance(module);
+                    return instance.exports;
+                });
+        }
+
+        // Image Handling Part
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        function resizeImage(img, width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            return canvas.toDataURL();
+        }
+
+        // Encoding Part
+        function encodeBase64(str) {
+            return btoa(str);
+        }
+
+        function decodeBase64(encodedStr) {
+            return atob(encodedStr);
+        }
+
+        function utf8ToBase64(str) {
+            return encodeBase64(unescape(encodeURIComponent(str)));
+        }
+
+        function base64ToUtf8(encodedStr) {
+            return decodeURIComponent(escape(decodeBase64(encodedStr)));
+        }
+
+        // Image Optimizer Part
+        document.getElementById('optimizeButton').addEventListener('click', async () => {
+            const input = document.getElementById('imageInput');
+            const file = input.files[0];
+            if (!file) return;
+
+            const originalSizeDiv = document.getElementById('originalSize');
+            const optimizedSizeDiv = document.getElementById('optimizedSize');
+            const originalImage = document.getElementById('originalImage');
+            const optimizedImage = document.getElementById('optimizedImage');
+            const downloadButton = document.getElementById('downloadButton');
+            const qualitySlider = document.getElementById('qualitySlider');
+            const qualityValue = document.getElementById('qualityValue');
+            const progressiveRenderingToggle = document.getElementById('progressiveRenderingToggle');
+            const dctMethodSelect = document.getElementById('dctMethodSelect');
+
+            const quality = parseFloat(qualitySlider.value);
+            const progressiveRendering = progressiveRenderingToggle.checked;
+            const dctMethod = parseInt(dctMethodSelect.value);
+
+            // Show original image
+            originalImage.style.display = 'inline';
+            originalImage.src = URL.createObjectURL(file);
+
+            // Get file size of original image
+            const originalFileSize = (file.size / 1024).toFixed(2);
+            originalSizeDiv.innerText = `Original Size: ${originalFileSize} KB`;
+
+            // Load and optimize the image
+            const img = await loadImage(URL.createObjectURL(file));
+            const resizedImageDataUrl = resizeImage(img, img.width, img.height);
+            optimizedImage.style.display = 'inline';
+            optimizedImage.src = resizedImageDataUrl;
+
+            // Get file size of optimized image
+            const optimizedFileSize = (resizedImageDataUrl.length / 1024).toFixed(2);
+            optimizedSizeDiv.innerText = `Optimized Size: ${optimizedFileSize} KB`;
+
+            // Download optimized image
+            downloadButton.style.display = 'inline';
+            downloadButton.href = resizedImageDataUrl;
+            downloadButton.download = `${file.name.split('.')[0]}_optimized.${file.name.split('.')[1]}`;
+        });
+    </script>
 </body>
 </html>
