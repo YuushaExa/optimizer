@@ -9,7 +9,7 @@
     <h1>Image Optimizer</h1>
     <input type="file" id="image-file-input" accept="image/jpeg">
     <button onclick="optimizeImage()">Optimize Image</button>
-    <button id="download-button" onclick="downloadImage()" disabled>Download Optimized Image</button>
+    <button id="download-button" onclick="downloadOptimizedImage()" disabled>Download Optimized Image</button>
     <p>Original Image Size: <span id="original-size"></span></p>
     <p>Optimized Image Size: <span id="optimized-size"></span></p>
     
@@ -46,14 +46,22 @@
         }
 
         async function optimizeImageData(imageFile, optimizationParams) {
-            const wasmModule = await WebAssembly.compileStreaming(fetch('https://test1211.pages.dev/jpegli.wasm'));
+            const wasmUrl = 'https://example.com/path/to/jpegli.wasm';  // Replace with the correct URL to your .wasm file
+            const wasmModule = await WebAssembly.compileStreaming(fetch(wasmUrl));
 
             const instance = await WebAssembly.instantiate(wasmModule, {
                 env: {
                     memory: new WebAssembly.Memory({ initial: 256, maximum: 10000, shared: true })
                 },
                 wasi_snapshot_preview1: {
-                    fd_prestat_get: () => {}
+                    fd_prestat_get: () => {},
+                    fd_prestat_dir_name: () => {},
+                    fd_fdstat_get: () => {},
+                    fd_fdstat_set_flags: () => {},
+                    fd_close: () => {},
+                    fd_seek: () => {},
+                    fd_write: () => {},
+                    fd_read: () => {}
                 }
             });
 
@@ -104,7 +112,7 @@
             });
         }
 
-        function downloadImage() {
+        function downloadOptimizedImage() {
             const blob = new Blob([optimizedImageData], { type: 'image/jpeg' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
