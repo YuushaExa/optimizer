@@ -5,39 +5,6 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>jSquash with Rollup example</title>
-  <style>
-    /* Add your CSS styles here */
-    * {box-sizing: border-box;}
-
-    .img-comp-container {
-      position: relative;
-      height: 200px; /*should be the same height as the images*/
-    }
-
-    .img-comp-img {
-      position: absolute;
-      width: auto;
-      height: auto;
-      overflow:hidden;
-    }
-
-    .img-comp-img img {
-      display:block;
-      vertical-align:middle;
-    }
-
-    .img-comp-slider {
-      position: absolute;
-      z-index:9;
-      cursor: ew-resize;
-      /*set the appearance of the slider:*/
-      width: 40px;
-      height: 40px;
-      background-color: #2196F3;
-      opacity: 0.7;
-      border-radius: 50%;
-    }
-  </style>
 </head>
 <body>
   <h1>Image Converter</h1>
@@ -67,18 +34,44 @@
     <button>Convert</button>
   </form>
   <p>Output Image (Right click to save)</p>
-  <p id="imageSizeBefore"></p>
-  <p id="imageSizeAfter"></p>
-  <p id="imageSizeDifference"></p>
+<p id="imageSizeBefore"></p>
+<p id="imageSizeAfter"></p>
+<p id="imageSizeDifference"></p>
 
-  <!-- Image comparison container -->
-  <div id="preview" class="img-comp-container"></div>
-
-  <!-- Include your JavaScript file -->
   <script type="module" src="./main.js"></script>
+  <style>
+* {box-sizing: border-box;}
 
-  <!-- Include the image comparison script -->
-  <script>
+.img-comp-container {
+  position: relative;
+  height: 200px; /*should be the same height as the images*/
+}
+
+.img-comp-img {
+  position: absolute;
+  width: auto;
+  height: auto;
+  overflow:hidden;
+}
+
+.img-comp-img img {
+  display:block;
+  vertical-align:middle;
+}
+
+.img-comp-slider {
+  position: absolute;
+  z-index:9;
+  cursor: ew-resize;
+  /*set the appearance of the slider:*/
+  width: 40px;
+  height: 40px;
+  background-color: #2196F3;
+  opacity: 0.7;
+  border-radius: 50%;
+}
+</style>
+<script>
 function initComparisons() {
   var x, i;
   /*find all elements with an "overlay" class:*/
@@ -155,9 +148,6 @@ function initComparisons() {
     }
   }
 }
-
-    // Execute image comparison initialization
-    initComparisons();
-  </script>
+</script>
 </body>
 </html>
