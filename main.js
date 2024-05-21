@@ -61,8 +61,11 @@ async function showOutput (imageBuffer, outputType) {
   preview.appendChild(previewImg);
 }
 
-async function initForm () {
+async function initForm() {
   const form = document.querySelector('form');
+  const inputFile = form.querySelector('input[name="file"]');
+  const imageSizeBefore = document.querySelector('#imageSizeBefore');
+  const imageSizeAfter = document.querySelector('#imageSizeAfter');
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -71,12 +74,25 @@ async function initForm () {
     const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
     const outputType = formData.get('outputType');
     const fileBuffer = await file.arrayBuffer();
+    
+    // Calculate image size before conversion
+    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2) + ' KB';
+    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeConversion}`;
+
+    // Convert the image
     const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+
+    // Calculate image size after conversion
+    const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
+    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2) + ' KB';
+    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion}`;
+
+    // Show output
     showOutput(imageBuffer, outputType);
   });
 }
 
-async function main () {
+async function main() {
   initForm();
 }
 
