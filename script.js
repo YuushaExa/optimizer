@@ -1,68 +1,83 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const fileInput = document.getElementById("fileInput");
-  const optimizeButton = document.getElementById("optimizeButton");
-  const sizeInfoDiv = document.getElementById("sizeInfo");
-  const outputDiv = document.getElementById("output");
-  const downloadButton = document.getElementById("downloadButton");
+import * as avif from 'https://unpkg.com/@jsquash/avif@latest?module';
+import * as jpeg from 'https://unpkg.com/@jsquash/jpeg@latest?module';
+import * as jxl from 'https://unpkg.com/@jsquash/jxl@latest?module';
+import * as png from 'https://unpkg.com/@jsquash/png@latest?module';
+import * as webp from 'https://unpkg.com/@jsquash/webp@latest?module';
 
-  let originalSize = 0;
-  let compressedSize = 0;
-  let compressedUrl = '';
+async function decode (sourceType, fileBuffer) {
+  switch (sourceType) {
+    case 'avif':
+      return await avif.decode(fileBuffer);
+    case 'jpeg':
+      return await jpeg.decode(fileBuffer);
+    case 'jxl':
+      return await jxl.decode(fileBuffer);
+    case 'png':
+      return await png.decode(fileBuffer);
+    case 'webp':
+      return await webp.decode(fileBuffer);
+    default:
+      throw new Error(`Unknown source type: ${sourceType}`);
+  }
+}
 
-  // Function to format bytes
-  const formatBytes = (bytes) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 Byte';
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-  };
+async function encode (outputType, imageData) {
+  switch (outputType) {
+    case 'avif':
+      return await avif.encode(imageData);
+    case 'jpeg':
+      return await jpeg.encode(imageData);
+    case 'jxl':
+      return await jxl.encode(imageData);
+    case 'png':
+      return await png.encode(imageData);
+    case 'webp':
+      return await webp.encode(imageData);
+    default:
+      throw new Error(`Unknown output type: ${outputType}`);
+  }
+}
 
-  // Function to compress the uploaded image
-  const compressImage = async (file) => {
-    try {
-      // Dynamically import the jSquash library
-      const { encode } = await import('https://cdn.jsdelivr.net/npm/@jsquash/jpeg@1.4.0/index.js');
+async function convert (sourceType, outputType, fileBuffer) {
+  const imageData = await decode(sourceType, fileBuffer);
+  return encode(outputType, imageData);
+}
 
-      const arrayBuffer = await file.arrayBuffer();
-      const compressedBlob = await encode(new Uint8Array(arrayBuffer), {
-        quality: 75, // Adjust the quality as needed
-      });
-
-      // Display compressed image
-      compressedUrl = URL.createObjectURL(compressedBlob);
-      outputDiv.innerHTML = `<img src="${compressedUrl}" alt="Compressed Image" width="100">`;
-
-      // Calculate and display size difference
-      compressedSize = compressedBlob.size;
-      sizeInfoDiv.innerText = `Original Size: ${formatBytes(originalSize)}\nCompressed Size: ${formatBytes(compressedSize)}\nSize Reduction: ${((1 - compressedSize / originalSize) * 100).toFixed(2)}%`;
-
-      // Show download button
-      downloadButton.style.display = 'inline-block';
-      downloadButton.href = compressedUrl;
-      downloadButton.download = 'optimized_image.jpg';
-    } catch (error) {
-      console.error("Error compressing image:", error);
-    }
-  };
-
-  // Event listener for file input change
-  fileInput.addEventListener("change", (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      originalSize = file.size;
-      optimizeButton.disabled = false;
-      sizeInfoDiv.innerText = `Original Size: ${formatBytes(originalSize)}`;
-    } else {
-      optimizeButton.disabled = true;
-      sizeInfoDiv.innerText = '';
-    }
+function blobToBase64(blob) {
+  return new Promise((resolve, _) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
   });
+}
 
-  // Event listener for optimize button click
-  optimizeButton.addEventListener("click", () => {
-    const file = fileInput.files[0];
-    if (file) {
-      compressImage(file);
-    }
+async function showOutput (imageBuffer, outputType) {
+  const preview = document.querySelector('#preview');
+  const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
+  const base64String = await blobToBase64(imageBlob);
+  const previewImg = document.createElement('img');
+  previewImg.src = base64String;
+  preview.innerHTML = '';
+  preview.appendChild(previewImg);
+}
+
+async function initForm () {
+  const form = document.querySelector('form');
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const file = formData.get('file');
+    const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
+    const outputType = formData.get('outputType');
+    const fileBuffer = await file.arrayBuffer();
+    const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+    showOutput(imageBuffer, outputType);
   });
-});
+}
+
+async function main () {
+  initForm();
+}
+
+main();
