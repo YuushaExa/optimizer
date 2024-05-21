@@ -93,11 +93,15 @@ async function initForm() {
     const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2); // Size in KB
 
     // Calculate percent difference
-    const percentDifference = ((imageSizeAfterConversion - imageSizeBeforeConversion) / imageSizeBeforeConversion) * 100;
+    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
+    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
+
+    // Determine sign of the difference
+    const sign = difference >= 0 ? '+' : '-';
 
     // Display sizes and percent difference
     imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
-    imageSizeDifference.textContent = `Percent Difference: ${percentDifference.toFixed(2)}%`;
+    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
 
     // Show output
     showOutput(imageBuffer, outputType);
@@ -109,3 +113,4 @@ async function main() {
 }
 
 main();
+
