@@ -46,7 +46,7 @@
         }
 
         async function optimizeImageData(imageFile, optimizationParams) {
-            const wasmModule = await WebAssembly.compileStreaming(fetch('https://raw.githubusercontent.com/YuushaExa/optimizer/main/jpegli.wasm'));
+            const wasmModule = await WebAssembly.compileStreaming(fetch('https://test1211.pages.dev/jpegli.wasm'));
 
             const instance = await WebAssembly.instantiate(wasmModule, {
                 env: {
