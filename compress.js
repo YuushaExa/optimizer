@@ -1,5 +1,5 @@
 // Wait for the DOM to be fully loaded
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   const fileInput = document.getElementById("fileInput");
   const optimizeButton = document.getElementById("optimizeButton");
   const sizeInfoDiv = document.getElementById("sizeInfo");
@@ -8,14 +8,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let originalSize = 0;
   let compressedSize = 0;
+  let compressedUrl = '';
+
+  // Function to format bytes
+  const formatBytes = (bytes) => {
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes === 0) return '0 Byte';
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  };
 
   // Function to compress the uploaded image
   const compressImage = async (file) => {
     try {
-      // Dynamically load the Squoosh library
-      const squooshLib = await import('https://unpkg.com/@squoosh/lib');
-      const { ImagePool } = squooshLib;
-      
+      // Load the Squoosh library dynamically
+      const { ImagePool } = await import('https://unpkg.com/@squoosh/lib');
+
       const imagePool = new ImagePool();
       const image = imagePool.ingestImage(file);
 
@@ -36,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const result = await image.encode(encodeOptions);
 
       // Display compressed image
-      const compressedUrl = URL.createObjectURL(
+      compressedUrl = URL.createObjectURL(
         new Blob([result.encodedWith.mozjpeg.binary], { type: "image/jpeg" })
       );
       outputDiv.innerHTML = `<img src="${compressedUrl}" alt="Compressed Image" width="100">`;
@@ -55,14 +63,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
       console.error("Error compressing image:", error);
     }
-  };
-
-  // Function to format bytes
-  const formatBytes = (bytes) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 Byte';
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
   };
 
   // Event listener for file input change
