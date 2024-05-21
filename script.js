@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const compressImage = async (file) => {
     try {
       // Dynamically import the jSquash library
-      const { encode } = await import('https://cdn.jsdelivr.net/npm/@jsquash/jpeg@1.4.0/esm/index.js');
+      const { encode } = await import('https://cdn.jsdelivr.net/npm/@jsquash/jpeg@1.4.0/index.js');
 
       const arrayBuffer = await file.arrayBuffer();
       const compressedBlob = await encode(new Uint8Array(arrayBuffer), {
