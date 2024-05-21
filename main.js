@@ -66,6 +66,13 @@ async function initForm() {
   const inputFile = form.querySelector('input[name="file"]');
   const imageSizeBefore = document.querySelector('#imageSizeBefore');
   const imageSizeAfter = document.querySelector('#imageSizeAfter');
+  const imageSizeDifference = document.querySelector('#imageSizeDifference');
+
+  inputFile.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2); // Size in KB
+    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+  });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -74,18 +81,23 @@ async function initForm() {
     const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
     const outputType = formData.get('outputType');
     const fileBuffer = await file.arrayBuffer();
-    
+
     // Calculate image size before conversion
-    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2) + ' KB';
-    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeConversion}`;
+    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2); // Size in KB
 
     // Convert the image
     const imageBuffer = await convert(sourceType, outputType, fileBuffer);
 
     // Calculate image size after conversion
     const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2) + ' KB';
-    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion}`;
+    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2); // Size in KB
+
+    // Calculate percent difference
+    const percentDifference = ((imageSizeAfterConversion - imageSizeBeforeConversion) / imageSizeBeforeConversion) * 100;
+
+    // Display sizes and percent difference
+    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
+    imageSizeDifference.textContent = `Percent Difference: ${percentDifference.toFixed(2)}%`;
 
     // Show output
     showOutput(imageBuffer, outputType);
