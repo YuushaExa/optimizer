@@ -51,15 +51,43 @@ function blobToBase64(blob) {
   });
 }
 
-async function showOutput (imageBuffer, outputType) {
+async function showOutput(imageBuffer, outputType) {
   const preview = document.querySelector('#preview');
+  preview.innerHTML = '';
+
+  const originalImage = document.createElement('div');
+  originalImage.classList.add('img-comp-container');
+
+  const convertedImage = document.createElement('div');
+  convertedImage.classList.add('img-comp-container');
+
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
-  const previewImg = document.createElement('img');
-  previewImg.src = base64String;
-  preview.innerHTML = '';
-  preview.appendChild(previewImg);
+
+  const originalImg = document.createElement('img');
+  originalImg.src = base64String;
+  originalImg.classList.add('img-comp-img');
+  originalImage.appendChild(originalImg);
+
+  const convertedImg = document.createElement('img');
+  convertedImg.src = base64String;
+  convertedImg.classList.add('img-comp-img');
+  convertedImage.appendChild(convertedImg);
+
+  // Create image comparison slider
+  const comparisonSlider = document.createElement('div');
+  comparisonSlider.classList.add('img-comp-slider');
+  convertedImage.appendChild(comparisonSlider);
+
+  preview.appendChild(originalImage);
+  preview.appendChild(convertedImage);
+
+  // Initialize image comparison slider
+  new ImageComparisonSlider(comparisonSlider, {
+    startingPosition: 50, // Set starting position of the slider
+  });
 }
+
 
 async function initForm() {
   const form = document.querySelector('form');
