@@ -1,5 +1,12 @@
+async function loadSquoosh() {
+  // Dynamically load the Squoosh library from CDN
+  const squooshLib = await import('https://unpkg.com/@squoosh/lib@0.5.3/build/index.js');
+  return squooshLib;
+}
+
 async function compressImage(file) {
-  const { ImagePool } = window.squoosh;
+  const squoosh = await loadSquoosh();
+  const { ImagePool } = squoosh;
   const imagePool = new ImagePool();
   const image = imagePool.ingestImage(file);
 
