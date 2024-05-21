@@ -1,4 +1,3 @@
-// Wait for the DOM to be fully loaded
 document.addEventListener("DOMContentLoaded", () => {
   const fileInput = document.getElementById("fileInput");
   const optimizeButton = document.getElementById("optimizeButton");
@@ -21,45 +20,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // Function to compress the uploaded image
   const compressImage = async (file) => {
     try {
-      // Load the Squoosh library dynamically
-      const { ImagePool } = await import('https://unpkg.com/@squoosh/lib');
+      // Dynamically import the jSquash library
+      const { encode } = await import('https://cdn.jsdelivr.net/npm/@jsquash/jpeg@1.4.0/esm/index.js');
 
-      const imagePool = new ImagePool();
-      const image = imagePool.ingestImage(file);
-
-      // Preprocessing and encoding options
-      const preprocessOptions = {
-        resize: {
-          width: 100, // Adjust as needed
-          height: 100, // Adjust as needed
-        },
-      };
-
-      const encodeOptions = {
-        mozjpeg: {}, // Empty object means 'use default settings'
-      };
-
-      // Preprocess and encode the image
-      await image.preprocess(preprocessOptions);
-      const result = await image.encode(encodeOptions);
+      const arrayBuffer = await file.arrayBuffer();
+      const compressedBlob = await encode(new Uint8Array(arrayBuffer), {
+        quality: 75, // Adjust the quality as needed
+      });
 
       // Display compressed image
-      compressedUrl = URL.createObjectURL(
-        new Blob([result.encodedWith.mozjpeg.binary], { type: "image/jpeg" })
-      );
+      compressedUrl = URL.createObjectURL(compressedBlob);
       outputDiv.innerHTML = `<img src="${compressedUrl}" alt="Compressed Image" width="100">`;
 
       // Calculate and display size difference
-      compressedSize = result.encodedWith.mozjpeg.size;
+      compressedSize = compressedBlob.size;
       sizeInfoDiv.innerText = `Original Size: ${formatBytes(originalSize)}\nCompressed Size: ${formatBytes(compressedSize)}\nSize Reduction: ${((1 - compressedSize / originalSize) * 100).toFixed(2)}%`;
 
       // Show download button
       downloadButton.style.display = 'inline-block';
       downloadButton.href = compressedUrl;
       downloadButton.download = 'optimized_image.jpg';
-
-      // Close the ImagePool
-      await imagePool.close();
     } catch (error) {
       console.error("Error compressing image:", error);
     }
