@@ -47,4 +47,27 @@
   <div id="preview"></div>
   <script type="module" src="./main.js"></script>
 </body>
+  <style>
+  .split-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    position: relative;
+  }
+
+  .split-container img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #ccc;
+    cursor: ew-resize;
+  }
+</style>
 </html>
