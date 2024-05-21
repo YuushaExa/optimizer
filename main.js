@@ -55,8 +55,9 @@ async function showOutput(imageBuffer, outputType) {
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
 
-  // Get the old image source from the form
-  const oldImgSrc = document.querySelector('input[name="file"]').value;
+  // Get the file input element
+  const inputFile = document.querySelector('input[name="file"]');
+  const oldImgSrc = await readFileAsDataURL(inputFile.files[0]);
 
   // Create container for comparison
   const comparisonContainer = document.createElement('div');
@@ -66,7 +67,7 @@ async function showOutput(imageBuffer, outputType) {
   const oldImageContainer = document.createElement('div');
   oldImageContainer.classList.add('img-comp-img');
   const oldImg = document.createElement('img');
-  oldImg.src = oldImgSrc; // Use the source of the old image
+  oldImg.src = oldImgSrc; // Use the data URL of the old image
   oldImg.width = 300;
   oldImg.height = 200;
   oldImageContainer.appendChild(oldImg);
@@ -91,7 +92,14 @@ async function showOutput(imageBuffer, outputType) {
   initComparisons();
 }
 
-
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 async function initForm() {
   const form = document.querySelector('form');
