@@ -51,15 +51,41 @@ function blobToBase64(blob) {
   });
 }
 
-async function showOutput (imageBuffer, outputType) {
+async function showOutput(imageBuffer, outputType) {
   const preview = document.querySelector('#preview');
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
-  const previewImg = document.createElement('img');
-  previewImg.src = base64String;
+
+  // Create container for comparison
+  const comparisonContainer = document.createElement('div');
+  comparisonContainer.classList.add('img-comp-container');
+
+  // Create old image container
+  const oldImageContainer = document.createElement('div');
+  oldImageContainer.classList.add('img-comp-img');
+  const oldImg = document.createElement('img');
+  oldImg.src = preview.querySelector('img').src; // Use the source of the previously displayed image
+  oldImageContainer.appendChild(oldImg);
+
+  // Create new image container
+  const newImageContainer = document.createElement('div');
+  newImageContainer.classList.add('img-comp-img', 'img-comp-overlay');
+  const newImg = document.createElement('img');
+  newImg.src = base64String;
+  newImageContainer.appendChild(newImg);
+
+  // Append old and new image containers to comparison container
+  comparisonContainer.appendChild(oldImageContainer);
+  comparisonContainer.appendChild(newImageContainer);
+
+  // Clear previous preview content and append comparison container
   preview.innerHTML = '';
-  preview.appendChild(previewImg);
+  preview.appendChild(comparisonContainer);
+
+  // Initialize comparisons
+  initComparisons();
 }
+
 
 async function initForm() {
   const form = document.querySelector('form');
