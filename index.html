@@ -71,6 +71,15 @@
   opacity: 0.7;
   border-radius: 50%;
 }
+    .img-comp-slider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px; /* Adjust the width of the vertical line */
+  background-color: white; /* Change the color of the vertical line */
+}
 </style>
 <script>
 function initComparisons() {
