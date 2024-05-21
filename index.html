@@ -1,137 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Optimizer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MozJPEG Compression</title>
 </head>
 <body>
-    <h1>Image Optimizer</h1>
-    <input type="file" id="image-file-input" accept="image/jpeg">
-    <button onclick="optimizeImage()">Optimize Image</button>
-    <button id="download-button" onclick="downloadOptimizedImage()" disabled>Download Optimized Image</button>
-    <p>Original Image Size: <span id="original-size"></span></p>
-    <p>Optimized Image Size: <span id="optimized-size"></span></p>
-    
-    <script>
-        let optimizedImageData;
-
-        async function optimizeImage() {
-            const imageFile = document.getElementById('image-file-input').files[0];
-            if (!imageFile) {
-                alert('Please select an image file.');
-                return;
-            }
-
-            const optimizationParams = {
-                quality: 80,
-                progressiveLevel: 2,
-                DTCMethod: 1,
-                adaptiveQuantization: 3,
-                fancyDownsampling: 1
-            };
-
-            try {
-                const originalSize = imageFile.size;
-                document.getElementById('original-size').textContent = formatBytes(originalSize);
-
-                optimizedImageData = await optimizeImageData(imageFile, optimizationParams);
-                const optimizedSize = optimizedImageData.length;
-                document.getElementById('optimized-size').textContent = formatBytes(optimizedSize);
-
-                document.getElementById('download-button').disabled = false;
-            } catch (error) {
-                console.error('Error optimizing image:', error);
-            }
-        }
-
-        async function optimizeImageData(imageFile, optimizationParams) {
-            const wasmUrl = 'https://test1211.pages.dev/jpegli.wasm';  // Replace with the correct URL to your .wasm file
-            const wasmModule = await WebAssembly.compileStreaming(fetch(wasmUrl));
-
-            const instance = await WebAssembly.instantiate(wasmModule, {
-                env: {
-                    memory: new WebAssembly.Memory({ initial: 256, maximum: 10000, shared: true })
-                },
-                wasi_snapshot_preview1: {
-                    fd_prestat_get: () => {},
-                    fd_prestat_dir_name: () => {},
-                    fd_fdstat_get: () => {},
-                    fd_fdstat_set_flags: () => {},
-                    fd_close: () => {},
-                    fd_seek: () => {},
-                    fd_write: () => {},
-                    fd_read: () => {},
-                    proc_exit: () => {} 
-                }
-            });
-
-            instance.exports.initialize();
-
-            const { malloc, encode, free } = instance.exports;
-            const memory = new Uint8Array(instance.exports.memory.buffer);
-
-            const { quality, progressiveLevel, DTCMethod, adaptiveQuantization, fancyDownsampling } = optimizationParams;
-
-            const imageData = await readImageData(imageFile);
-
-            const imagePointer = malloc(imageData.data.length);
-            memory.set(imageData.data, imagePointer);
-
-            const outputPointer = malloc(8);
-            const encodedPointer = encode(imagePointer, imageData.width, imageData.height, 2, 2, outputPointer, quality, progressiveLevel, adaptiveQuantization, fancyDownsampling, DTCMethod);
-            const outputDataLength = new Uint32Array(memory.buffer, outputPointer, 2)[0];
-            const optimizedImageData = new Uint8Array(memory.buffer, encodedPointer, outputDataLength);
-
-            free(imagePointer);
-            free(outputPointer);
-            free(encodedPointer);
-
-            return optimizedImageData;
-        }
-
-        function readImageData(imageFile) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
-                        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-                        resolve({ data: imageData.data, width: img.width, height: img.height });
-                    };
-                    img.onerror = (error) => {
-                        reject(error);
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(imageFile);
-            });
-        }
-
-        function downloadOptimizedImage() {
-            const blob = new Blob([optimizedImageData], { type: 'image/jpeg' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'optimized_image.jpg';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-    </script>
+  <input type="file" id="fileInput" accept="image/*">
+  <button id="optimizeButton" disabled>Optimize Image</button>
+  <div id="sizeInfo"></div>
+  <img id="originalImage" alt="Original Image" style="display: none;">
+  <img id="compressedImage" alt="Compressed Image" style="display: none;">
+  <button id="downloadButton" style="display: none;">Download Optimized Image</button>
+  <script src="https://unpkg.com/@squoosh/lib"></script>
+  <script src="compress.js"></script>
 </body>
 </html>
