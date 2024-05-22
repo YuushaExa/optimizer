@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>jSquash with Rollup example</title>
+  <title>Image Converter with Resize</title>
   <style>
     * { box-sizing: border-box; }
     .img-comp-container {
@@ -91,6 +91,15 @@
         <input type="radio" name="outputType" value="webp"> WebP
       </label>
     </div>
+    <p>Resize image before conversion:</p>
+    <div>
+      <label>
+        Width: <input type="number" id="resizeWidth" name="resizeWidth" min="1">
+      </label>
+      <label>
+        Height: <input type="number" id="resizeHeight" name="resizeHeight" min="1">
+      </label>
+    </div>
     <button>Convert</button>
   </form>
   <p>Output Image (Right click to save)</p>
@@ -100,7 +109,7 @@
   <div id="preview"></div>
 
   <script type="module" src="./main.js"></script>
-  <script>
+    <script>
 function initComparisons() {
   var overlays = document.getElementsByClassName("img-comp-overlay");
   for (var i = 0; i < overlays.length; i++) {
