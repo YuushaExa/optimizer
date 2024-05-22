@@ -1,38 +1,44 @@
-import * as avif from 'https://unpkg.com/@jsquash/avif@latest?module';
-import * as jpeg from 'https://unpkg.com/@jsquash/jpeg@latest?module';
-import * as jxl from 'https://unpkg.com/@jsquash/jxl@latest?module';
-import * as png from 'https://unpkg.com/@jsquash/png@latest?module';
-import * as webp from 'https://unpkg.com/@jsquash/webp@latest?module';
-
 async function decode(sourceType, fileBuffer) {
+  let decoder;
   switch (sourceType) {
     case 'avif':
-      return await avif.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'jpeg':
-      return await jpeg.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'jxl':
-      return await jxl.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'png':
-      return await png.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'webp':
-      return await webp.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      return await decoder.decode(fileBuffer);
     default:
       throw new Error(`Unknown source type: ${sourceType}`);
   }
 }
 
 async function encode(outputType, imageData) {
+  let encoder;
   switch (outputType) {
     case 'avif':
-      return await avif.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      return await encoder.encode(imageData);
     case 'jpeg':
-      return await jpeg.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      return await encoder.encode(imageData);
     case 'jxl':
-      return await jxl.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      return await encoder.encode(imageData);
     case 'png':
-      return await png.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      return await encoder.encode(imageData);
     case 'webp':
-      return await webp.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      return await encoder.encode(imageData);
     default:
       throw new Error(`Unknown output type: ${outputType}`);
   }
@@ -55,7 +61,7 @@ async function showOutput(imageBuffer, outputType) {
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
 
-  const inputFile = document.querySelector('input[type="file"]');
+  const inputFile = document.querySelector('input[name="file"]');
   const oldImgSrc = await readFileAsDataURL(inputFile.files[0]);
 
   let comparisonContainer = document.querySelector('.img-comp-container');
@@ -99,120 +105,47 @@ function readFileAsDataURL(file) {
   });
 }
 
-function handleFiles(files) {
-  const fileList = Array.from(files);
-  fileList.forEach(async (file) => {
+async function initForm() {
+  const form = document.querySelector('form');
+  const inputFile = form.querySelector('input[name="file"]');
+  const imageSizeBefore = document.querySelector('#imageSizeBefore');
+  const imageSizeAfter = document.querySelector('#imageSizeAfter');
+  const imageSizeDifference = document.querySelector('#imageSizeDifference');
+
+  inputFile.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
+    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const file = formData.get('file');
     const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
-    const outputType = document.querySelector('input[name="outputType"]:checked').value;
+    const outputType = formData.get('outputType');
     const fileBuffer = await file.arrayBuffer();
 
-    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2); // Size in KB
+    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
+
     const imageBuffer = await convert(sourceType, outputType, fileBuffer);
 
     const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2); // Size in KB
+    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
+
     const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
     const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
     const sign = difference >= 0 ? '+' : '-';
 
-    // Display sizes and percent difference
-    document.querySelector('#imageSizeBefore').textContent = `Image Size Before Conversion: ${imageSizeBeforeConversion} KB`;
-    document.querySelector('#imageSizeAfter').textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
-    document.querySelector('#imageSizeDifference').textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
+    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
+    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
 
-    // Show output
     showOutput(imageBuffer, outputType);
   });
 }
 
-function initForm() {
-  const dragDropArea = document.getElementById('drag-drop-area');
-  const fileInput = document.getElementById('file-input');
-  const convertButton = document.getElementById('convert-button');
-
-  dragDropArea.addEventListener('click', () => fileInput.click());
-
-  dragDropArea.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    dragDropArea.classList.add('dragover');
-  });
-
-  dragDropArea.addEventListener('dragleave', () => dragDropArea.classList.remove('dragover'));
-
-  dragDropArea.addEventListener('drop', (event) => {
-    event.preventDefault();
-    dragDropArea.classList.remove('dragover');
-    handleFiles(event.dataTransfer.files);
-  });
-
-  fileInput.addEventListener('change', (event) => {
-    handleFiles(event.target.files);
-  });
-
-  convertButton.addEventListener('click', () => {
-    fileInput.click();
-  });
+async function main() {
+  initForm();
 }
 
-function initComparisons() {
-  const overlays = document.getElementsByClassName('img-comp-overlay');
-  for (let i = 0; i < overlays.length; i++) {
-    compareImages(overlays[i]);
-  }
-
-  function compareImages(img) {
-    let slider, button, clicked = 0, w, h;
-    w = img.offsetWidth;
-    h = img.offsetHeight;
-
-    img.style.width = (w / 2) + 'px';
-
-    slider = document.createElement('div');
-    slider.setAttribute('class', 'img-comp-slider');
-
-    button = document.createElement('div');
-    button.setAttribute('class', 'img-comp-slider-button');
-
-    slider.appendChild(button);
-    img.parentElement.insertBefore(slider, img);
-    slider.style.left = (w / 2) - (slider.offsetWidth / 2) + 'px';
-
-    slider.addEventListener('mousedown', slideReady);
-    window.addEventListener('mouseup', slideFinish);
-    slider.addEventListener('touchstart', slideReady);
-    window.addEventListener('touchend', slideFinish);
-
-    function slideReady(e) {
-      e.preventDefault();
-      clicked = 1;
-      window.addEventListener('mousemove', slideMove);
-      window.addEventListener('touchmove', slideMove);
-    }
-
-    function slideFinish() {
-      clicked = 0;
-    }
-
-    function slideMove(e) {
-      if (!clicked) return;
-      const pos = getCursorPos(e);
-      if (pos < 0) pos = 0;
-      if (pos > w) pos = w;
-      slide(pos);
-    }
-
-    function getCursorPos(e) {
-      e = (e.changedTouches) ? e.changedTouches[0] : e;
-      const rect = img.getBoundingClientRect();
-      const x = e.pageX - rect.left - window.pageXOffset;
-      return x;
-    }
-
-    function slide(x) {
-      img.style.width = x + 'px';
-      slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + 'px';
-    }
-  }
-}
-
-document.addEventListener('DOMContentLoaded', initForm);
+main();
