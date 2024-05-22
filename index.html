@@ -8,11 +8,12 @@
 </head>
 <body>
   <h1>Image Converter</h1>
-  <form>
-    <label>
-      Choose your source image:
-      <input type="file" name="file" accept=".avif,.jxl,image/*">
-    </label>
+  <form id="image-form">
+    <label for="file-drop-zone">Drag and drop your images here:</label>
+    <div id="file-drop-zone" class="drop-zone">
+      <p>Drop files here or click to upload.</p>
+      <input type="file" name="file" accept=".avif,.jxl,image/*" multiple style="display:none;">
+    </div>
     <p>Choose output image type:</p>
     <div>
       <label>
@@ -41,119 +42,131 @@
 
   <script type="module" src="./main.js"></script>
   <style>
-* {box-sizing: border-box;}
+    * {box-sizing: border-box;}
 
-.img-comp-container {
-  position: relative;
-  height: 1200px; /*should be the same height as the images*/
-}
-
-.img-comp-img {
-  position: absolute;
-  width: auto;
-  height: auto;
-  overflow:hidden;
-}
-
-.img-comp-img img {
-  display:block;
-  vertical-align:middle;
-}
-
-.img-comp-slider {
-  position: absolute;
-  z-index: 9;
-  right: calc(50% - 1px);
-  bottom: 0;
-  width: 2px;
-  background-color: rgba(255,255,255,.5);
-  border-top: 0;
-  border-bottom: 0;
-  box-shadow: 0 0 2px rgb(0 0 0 / 50%);
-  cursor: ew-resize;
-  top: 0;
-}
-.img-comp-slider-button {
-  position: absolute;
-  top: calc(50% - 40px);
-  left: -4px;
-  width: 10px;
-  background-color: #ddd;
-  border: 4px solid #fff;
-  height: 80px;
-  text-align: center;
-  padding: 0;
-  outline: 0;
-  cursor: ew-resize;
-  box-shadow: 0 0 2px rgb(0 0 0 / 50%);
-}
-</style>
-<script>
-function initComparisons() {
-  var overlays = document.getElementsByClassName("img-comp-overlay");
-  for (var i = 0; i < overlays.length; i++) {
-    compareImages(overlays[i]);
-  }
-
-  function compareImages(img) {
-    var slider, button, clicked = 0, w, h;
-    w = img.offsetWidth;
-    h = img.offsetHeight;
-
-    img.style.width = (w / 2) + "px";
-
-    slider = document.createElement("DIV");
-    slider.setAttribute("class", "img-comp-slider");
-
-    button = document.createElement("DIV");
-    button.setAttribute("class", "img-comp-slider-button");
-
-    slider.appendChild(button);
-
-    img.parentElement.insertBefore(slider, img);
-
-    slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
-
-    slider.addEventListener("mousedown", slideReady);
-    window.addEventListener("mouseup", slideFinish);
-    slider.addEventListener("touchstart", slideReady);
-    window.addEventListener("touchend", slideFinish);
-
-    function slideReady(e) {
-      e.preventDefault();
-      clicked = 1;
-      window.addEventListener("mousemove", slideMove);
-      window.addEventListener("touchmove", slideMove);
+    .drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: 5px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
     }
 
-    function slideFinish() {
-      clicked = 0;
+    .drop-zone.dragover {
+      border-color: #000;
     }
 
-    function slideMove(e) {
-      if (!clicked) return;
-      var pos = getCursorPos(e);
-      if (pos < 0) pos = 0;
-      if (pos > w) pos = w;
-      slide(pos);
+    .img-comp-container {
+      position: relative;
+      height: 1200px; /*should be the same height as the images*/
     }
 
-    function getCursorPos(e) {
-      e = (e.changedTouches) ? e.changedTouches[0] : e;
-      var rect = img.getBoundingClientRect();
-      var x = e.pageX - rect.left - window.pageXOffset;
-      return x;
+    .img-comp-img {
+      position: absolute;
+      width: auto;
+      height: auto;
+      overflow:hidden;
     }
 
-    function slide(x) {
-      img.style.width = x + "px";
-      slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
+    .img-comp-img img {
+      display:block;
+      vertical-align:middle;
     }
-  }
-}
 
-window.onload = initComparisons;
+    .img-comp-slider {
+      position: absolute;
+      z-index: 9;
+      right: calc(50% - 1px);
+      bottom: 0;
+      width: 2px;
+      background-color: rgba(255,255,255,.5);
+      border-top: 0;
+      border-bottom: 0;
+      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
+      cursor: ew-resize;
+      top: 0;
+    }
+    .img-comp-slider-button {
+      position: absolute;
+      top: calc(50% - 40px);
+      left: -4px;
+      width: 10px;
+      background-color: #ddd;
+      border: 4px solid #fff;
+      height: 80px;
+      text-align: center;
+      padding: 0;
+      outline: 0;
+      cursor: ew-resize;
+      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
+    }
+  </style>
+  <script>
+    function initComparisons() {
+      var overlays = document.getElementsByClassName("img-comp-overlay");
+      for (var i = 0; i < overlays.length; i++) {
+        compareImages(overlays[i]);
+      }
 
-</script>
+      function compareImages(img) {
+        var slider, button, clicked = 0, w, h;
+        w = img.offsetWidth;
+        h = img.offsetHeight;
+
+        img.style.width = (w / 2) + "px";
+
+        slider = document.createElement("DIV");
+        slider.setAttribute("class", "img-comp-slider");
+
+        button = document.createElement("DIV");
+        button.setAttribute("class", "img-comp-slider-button");
+
+        slider.appendChild(button);
+
+        img.parentElement.insertBefore(slider, img);
+
+        slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
+
+        slider.addEventListener("mousedown", slideReady);
+        window.addEventListener("mouseup", slideFinish);
+        slider.addEventListener("touchstart", slideReady);
+        window.addEventListener("touchend", slideFinish);
+
+        function slideReady(e) {
+          e.preventDefault();
+          clicked = 1;
+          window.addEventListener("mousemove", slideMove);
+          window.addEventListener("touchmove", slideMove);
+        }
+
+        function slideFinish() {
+          clicked = 0;
+        }
+
+        function slideMove(e) {
+          if (!clicked) return;
+          var pos = getCursorPos(e);
+          if (pos < 0) pos = 0;
+          if (pos > w) pos = w;
+          slide(pos);
+        }
+
+        function getCursorPos(e) {
+          e = (e.changedTouches) ? e.changedTouches[0] : e;
+          var rect = img.getBoundingClientRect();
+          var x = e.pageX - rect.left - window.pageXOffset;
+          return x;
+        }
+
+        function slide(x) {
+          img.style.width = x + "px";
+          slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
+        }
+      }
+    }
+
+    window.onload = initComparisons;
+
+  </script>
 </body>
 </html>
