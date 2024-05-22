@@ -52,14 +52,6 @@ function blobToBase64(blob) {
 }
 
 async function showOutput(imageBuffer, outputType) {
-  const preview = document.querySelector('#preview');
-  const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-  const base64String = await blobToBase64(imageBlob);
-  const previewImg = document.createElement('img');
-  previewImg.src = base64String;
-  preview.innerHTML = '';
-  preview.appendChild(previewImg);
-  
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
   // Get the file input element
@@ -95,6 +87,12 @@ async function showOutput(imageBuffer, outputType) {
 
   // Initialize comparisons
   initComparisons();
+
+    const preview = document.querySelector('#preview');
+  const previewImg = document.createElement('img');
+  previewImg.src = base64String;
+  preview.innerHTML = '';
+  preview.appendChild(previewImg);
 }
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
