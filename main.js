@@ -116,7 +116,46 @@ async function handleFileDrop(event) {
   imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload.toFixed(2)} KB`;
 
   const form = document.querySelector('#image-form');
-  form.submit();
+  await processFiles(form, files); // Process files instead of submitting the form
+}
+
+async function processFiles(form, files) {
+  try {
+    const formData = new FormData(form);
+    const outputType = formData.get('outputType');
+
+    const imageSizeBeforeConversion = Array.from(files).reduce((acc, file) => acc + file.size, 0) / 1024;
+
+    let totalBuffer = new Uint8Array();
+
+    for (const file of files) {
+      const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
+      const fileBuffer = await file.arrayBuffer();
+      const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+
+      const newBuffer = new Uint8Array(totalBuffer.length + imageBuffer.byteLength);
+      newBuffer.set(totalBuffer);
+      newBuffer.set(new Uint8Array(imageBuffer), totalBuffer.length);
+      totalBuffer = newBuffer;
+    }
+
+    const imageBlob = new Blob([totalBuffer], { type: `image/${outputType}` });
+    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
+
+    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
+    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
+    const sign = difference >= 0 ? '+' : '-';
+
+    const imageSizeAfter = document.querySelector('#imageSizeAfter');
+    const imageSizeDifference = document.querySelector('#imageSizeDifference');
+
+    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
+    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
+
+    await showOutput(totalBuffer.buffer, outputType);
+  } catch (error) {
+    console.error('Error processing files:', error);
+  }
 }
 
 function initDragAndDrop() {
@@ -145,42 +184,11 @@ async function initForm() {
   initDragAndDrop();
 
   const form = document.querySelector('#image-form');
-  const imageSizeBefore = document.querySelector('#imageSizeBefore');
-  const imageSizeAfter = document.querySelector('#imageSizeAfter');
-  const imageSizeDifference = document.querySelector('#imageSizeDifference');
 
   form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const formData = new FormData(form);
-    const files = formData.getAll('file');
-    const outputType = formData.get('outputType');
-
-    const imageSizeBeforeConversion = Array.from(files).reduce((acc, file) => acc + file.size, 0) / 1024;
-
-    let totalBuffer = new Uint8Array();
-
-    for (const file of files) {
-      const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
-      const fileBuffer = await file.arrayBuffer();
-      const imageBuffer = await convert(sourceType, outputType, fileBuffer);
-
-      const newBuffer = new Uint8Array(totalBuffer.length + imageBuffer.byteLength);
-      newBuffer.set(totalBuffer);
-      newBuffer.set(new Uint8Array(imageBuffer), totalBuffer.length);
-      totalBuffer = newBuffer;
-    }
-
-    const imageBlob = new Blob([totalBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
-
-    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
-    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
-    const sign = difference >= 0 ? '+' : '-';
-
-    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
-    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
-
-    showOutput(totalBuffer.buffer, outputType);
+    event.preventDefault(); // Prevent the default form submission
+    const files = form.querySelector('input[name="file"]').files;
+    await processFiles(form, files); // Process files manually
   });
 }
 
