@@ -8,10 +8,10 @@
 </head>
 <body>
   <h1>Image Converter</h1>
-  <form>
+  <form id="convertForm">
     <label>
       Choose your source image:
-      <input type="file" name="file" accept=".avif,.jxl,image/*">
+      <input type="file" id="fileInput" accept=".avif,.jxl,image/*">
     </label>
     <p>Choose output image type:</p>
     <div>
@@ -19,147 +19,214 @@
         <input type="radio" name="outputType" value="avif" checked> AVIF
       </label>
       <label>
-        <input type="radio" name="outputType" value="jpeg" checked> JPEG
+        <input type="radio" name="outputType" value="jpeg"> JPEG
       </label>
       <label>
-        <input type="radio" name="outputType" value="jxl" checked> JPEG XL
+        <input type="radio" name="outputType" value="jxl"> JPEG XL
       </label>
       <label>
-        <input type="radio" name="outputType" value="png" checked> PNG
+        <input type="radio" name="outputType" value="png"> PNG
       </label>
       <label>
-        <input type="radio" name="outputType" value="webp" checked> WebP
+        <input type="radio" name="outputType" value="webp"> WebP
       </label>
     </div>
-    <button>Convert</button>
+    <button type="submit">Convert</button>
   </form>
   <p>Output Image (Right click to save)</p>
-<p id="imageSizeBefore"></p>
-<p id="imageSizeAfter"></p>
-<p id="imageSizeDifference"></p>
+  <p id="imageSizeBefore"></p>
+  <p id="imageSizeAfter"></p>
+  <p id="imageSizeDifference"></p>
   <div id="preview"></div>
 
-  <script type="module" src="./main.js"></script>
+  <script type="module">
+    async function loadModule(format) {
+      switch (format) {
+        case 'avif':
+          return await import('https://unpkg.com/@jsquash/avif@latest?module');
+        case 'jpeg':
+          return await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+        case 'jxl':
+          return await import('https://unpkg.com/@jsquash/jxl@latest?module');
+        case 'png':
+          return await import('https://unpkg.com/@jsquash/png@latest?module');
+        case 'webp':
+          return await import('https://unpkg.com/@jsquash/webp@latest?module');
+        default:
+          throw new Error(`Unknown format: ${format}`);
+      }
+    }
+
+    async function decode(sourceType, fileBuffer) {
+      const module = await loadModule(sourceType);
+      return await module.decode(fileBuffer);
+    }
+
+    async function encode(outputType, imageData) {
+      const module = await loadModule(outputType);
+      return await module.encode(imageData);
+    }
+
+    document.getElementById('convertForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput.files.length === 0) {
+        alert('Please select a file.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const outputType = document.querySelector('input[name="outputType"]:checked').value;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const fileBuffer = e.target.result;
+        const sourceType = file.type.split('/')[1];
+        const decodedImage = await decode(sourceType, fileBuffer);
+        const encodedBuffer = await encode(outputType, decodedImage);
+
+        // Display the original and converted images
+        const originalImageUrl = URL.createObjectURL(new Blob([fileBuffer]));
+        const convertedImageUrl = URL.createObjectURL(new Blob([encodedBuffer]));
+
+        document.getElementById('preview').innerHTML = `
+          <div class="img-comp-container">
+            <div class="img-comp-img">
+              <img src="${originalImageUrl}" alt="Original Image" width="300">
+            </div>
+            <div class="img-comp-img img-comp-overlay">
+              <img src="${convertedImageUrl}" alt="Converted Image" width="300">
+            </div>
+            <div class="img-comp-slider">
+              <div class="img-comp-slider-button"></div>
+            </div>
+          </div>
+        `;
+        initComparisons();
+
+        // Display size information
+        document.getElementById('imageSizeBefore').textContent = `Original Size: ${(fileBuffer.byteLength / 1024).toFixed(2)} KB`;
+        document.getElementById('imageSizeAfter').textContent = `Converted Size: ${(encodedBuffer.byteLength / 1024).toFixed(2)} KB`;
+        document.getElementById('imageSizeDifference').textContent = `Difference: ${((encodedBuffer.byteLength - fileBuffer.byteLength) / 1024).toFixed(2)} KB`;
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    function initComparisons() {
+      var overlays = document.getElementsByClassName("img-comp-overlay");
+      for (var i = 0; i < overlays.length; i++) {
+        compareImages(overlays[i]);
+      }
+
+      function compareImages(img) {
+        var slider, button, clicked = 0, w, h;
+        w = img.offsetWidth;
+        h = img.offsetHeight;
+
+        img.style.width = (w / 2) + "px";
+
+        slider = document.createElement("DIV");
+        slider.setAttribute("class", "img-comp-slider");
+
+        button = document.createElement("DIV");
+        button.setAttribute("class", "img-comp-slider-button");
+
+        slider.appendChild(button);
+        img.parentElement.insertBefore(slider, img);
+
+        slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
+
+        slider.addEventListener("mousedown", slideReady);
+        window.addEventListener("mouseup", slideFinish);
+        slider.addEventListener("touchstart", slideReady);
+        window.addEventListener("touchend", slideFinish);
+
+        function slideReady(e) {
+          e.preventDefault();
+          clicked = 1;
+          window.addEventListener("mousemove", slideMove);
+          window.addEventListener("touchmove", slideMove);
+        }
+
+        function slideFinish() {
+          clicked = 0;
+        }
+
+        function slideMove(e) {
+          if (!clicked) return;
+          var pos = getCursorPos(e);
+          if (pos < 0) pos = 0;
+          if (pos > w) pos = w;
+          slide(pos);
+        }
+
+        function getCursorPos(e) {
+          e = (e.changedTouches) ? e.changedTouches[0] : e;
+          var rect = img.getBoundingClientRect();
+          var x = e.pageX - rect.left - window.pageXOffset;
+          return x;
+        }
+
+        function slide(x) {
+          img.style.width = x + "px";
+          slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
+        }
+      }
+    }
+
+    window.onload = initComparisons;
+  </script>
   <style>
-* {box-sizing: border-box;}
+    * { box-sizing: border-box; }
 
-.img-comp-container {
-  position: relative;
-  height: 1200px; /*should be the same height as the images*/
-}
+    .img-comp-container {
+      position: relative;
+      height: 300px; /* should be the same height as the images */
+    }
 
-.img-comp-img {
-  position: absolute;
-  width: auto;
-  height: auto;
-  overflow:hidden;
-}
+    .img-comp-img {
+      position: absolute;
+      width: auto;
+      height: auto;
+      overflow: hidden;
+    }
 
-.img-comp-img img {
-  display:block;
-  vertical-align:middle;
-}
+    .img-comp-img img {
+      display: block;
+      vertical-align: middle;
+      max-width: 100%;
+    }
 
-.img-comp-slider {
-    position: absolute;
-    z-index: 9;
-    right: calc(50% - 1px);
-    bottom: 0;
-    width: 2px;
-    background-color: rgba(255,255,255,.5);
-    border-top: 0;
-    border-bottom: 0;
-    box-shadow: 0 0 2px rgb(0 0 0 / 50%);
-  cursor: ew-resize;
+    .img-comp-slider {
+      position: absolute;
+      z-index: 9;
+      right: calc(50% - 1px);
+      bottom: 0;
+      width: 2px;
+      background-color: rgba(255, 255, 255, .5);
+      border-top: 0;
+      border-bottom: 0;
+      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
+      cursor: ew-resize;
       top: 0;
-}
-.img-comp-slider-button {
-    position: absolute;
-    top: calc(50% - 40px);
-    left: -4px;
-    width: 10px;
-    background-color: #ddd;
-    border: 4px solid #fff;
-    height: 80px;
-    text-align: center;
-    padding: 0;
-    outline: 0;
-    cursor: ew-resize;
-    box-shadow: 0 0 2px rgb(0 0 0 / 50%);
-}
-</style>
-<script>
-function initComparisons() {
-  var overlays = document.getElementsByClassName("img-comp-overlay");
-  for (var i = 0; i < overlays.length; i++) {
-    compareImages(overlays[i]);
-  }
-
-  function compareImages(img) {
-    var slider, button, clicked = 0, w, h;
-    w = img.offsetWidth;
-    h = img.offsetHeight;
-
-    img.style.width = (w / 2) + "px";
-
-    // Create the slider div
-    slider = document.createElement("DIV");
-    slider.setAttribute("class", "img-comp-slider");
-
-    // Create the button div
-    button = document.createElement("DIV");
-    button.setAttribute("class", "img-comp-slider-button");
-
-    // Append the button to the slider
-    slider.appendChild(button);
-
-    // Insert the slider before the image
-    img.parentElement.insertBefore(slider, img);
-
-    // Remove the vertical positioning
-    slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
-
-    slider.addEventListener("mousedown", slideReady);
-    window.addEventListener("mouseup", slideFinish);
-    slider.addEventListener("touchstart", slideReady);
-    window.addEventListener("touchend", slideFinish);
-
-    function slideReady(e) {
-      e.preventDefault();
-      clicked = 1;
-      window.addEventListener("mousemove", slideMove);
-      window.addEventListener("touchmove", slideMove);
     }
 
-    function slideFinish() {
-      clicked = 0;
+    .img-comp-slider-button {
+      position: absolute;
+      top: calc(50% - 20px);
+      left: -4px;
+      width: 10px;
+      background-color: #ddd;
+      border: 4px solid #fff;
+      height: 40px;
+      text-align: center;
+      padding: 0;
+      outline: 0;
+      cursor: ew-resize;
+      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
     }
-
-    function slideMove(e) {
-      if (!clicked) return;
-      var pos = getCursorPos(e);
-      if (pos < 0) pos = 0;
-      if (pos > w) pos = w;
-      slide(pos);
-    }
-
-    function getCursorPos(e) {
-      e = (e.changedTouches) ? e.changedTouches[0] : e;
-      var rect = img.getBoundingClientRect();
-      var x = e.pageX - rect.left - window.pageXOffset;
-      return x;
-    }
-
-    function slide(x) {
-      img.style.width = x + "px";
-      slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
-    }
-  }
-}
-
-// Initialize the comparisons when the window is loaded
-window.onload = initComparisons;
-
-</script>
+  </style>
 </body>
 </html>
