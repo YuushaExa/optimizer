@@ -44,9 +44,22 @@ async function encode(outputType, imageData) {
   }
 }
 
-async function convert(sourceType, outputType, fileBuffer) {
+async function convert(sourceType, outputType, fileBuffer, resizeOptions) {
   const imageData = await decode(sourceType, fileBuffer);
-  return encode(outputType, imageData);
+  const resizedImageData = resizeOptions ? resizeImage(imageData, resizeOptions) : imageData;
+  return encode(outputType, resizedImageData);
+}
+
+function resizeImage(imageData, { width, height }) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = width;
+  canvas.height = height;
+
+  ctx.drawImage(imageData, 0, 0, width, height);
+
+  return ctx.getImageData(0, 0, width, height);
 }
 
 function blobToBase64(blob) {
@@ -109,10 +122,15 @@ async function handleFile(file) {
   const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
   const outputType = document.querySelector('input[name="outputType"]:checked').value;
   const fileBuffer = await file.arrayBuffer();
+  
+  const resizeWidth = document.querySelector('#resizeWidth').value;
+  const resizeHeight = document.querySelector('#resizeHeight').value;
+
+  const resizeOptions = (resizeWidth && resizeHeight) ? { width: parseInt(resizeWidth), height: parseInt(resizeHeight) } : null;
 
   const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
 
-  const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+  const imageBuffer = await convert(sourceType, outputType, fileBuffer, resizeOptions);
 
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
@@ -176,3 +194,68 @@ async function main() {
 }
 
 main();
+
+function initComparisons() {
+  var overlays = document.getElementsByClassName("img-comp-overlay");
+  for (var i = 0; i < overlays.length; i++) {
+    compareImages(overlays[i]);
+  }
+
+  function compareImages(img) {
+    var slider, button, clicked = 0, w, h;
+    w = img.offsetWidth;
+    h = img.offsetHeight;
+
+    img.style.width = (w / 2) + "px";
+
+    slider = document.createElement("DIV");
+    slider.setAttribute("class", "img-comp-slider");
+
+    button = document.createElement("DIV");
+    button.setAttribute("class", "img-comp-slider-button");
+
+    slider.appendChild(button);
+
+    img.parentElement.insertBefore(slider, img);
+
+    slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
+
+    slider.addEventListener("mousedown", slideReady);
+    window.addEventListener("mouseup", slideFinish);
+    slider.addEventListener("touchstart", slideReady);
+    window.addEventListener("touchend", slideFinish);
+
+    function slideReady(e) {
+      e.preventDefault();
+      clicked = 1;
+      window.addEventListener("mousemove", slideMove);
+      window.addEventListener("touchmove", slideMove);
+    }
+
+    function slideFinish() {
+      clicked = 0;
+    }
+
+    function slideMove(e) {
+      if (!clicked) return;
+      var pos = getCursorPos(e);
+      if (pos < 0) pos = 0;
+      if (pos > w) pos = w;
+      slide(pos);
+    }
+
+    function getCursorPos(e) {
+      e = (e.changedTouches) ? e.changedTouches[0] : e;
+      var rect = img.getBoundingClientRect();
+      var x = e.pageX - rect.left - window.pageXOffset;
+      return x;
+    }
+
+    function slide(x) {
+      img.style.width = x + "px";
+      slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
+    }
+  }
+}
+
+window.onload = initComparisons;
