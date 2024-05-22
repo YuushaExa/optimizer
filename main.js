@@ -46,20 +46,32 @@ async function encode(outputType, imageData) {
 
 async function convert(sourceType, outputType, fileBuffer, resizeOptions) {
   const imageData = await decode(sourceType, fileBuffer);
-  const resizedImageData = resizeOptions ? resizeImage(imageData, resizeOptions) : imageData;
+  const resizedImageData = resizeOptions ? await resizeImage(imageData, resizeOptions) : imageData;
   return encode(outputType, resizedImageData);
 }
 
-function resizeImage(imageData, { width, height }) {
+async function resizeImage(imageData, { width, height }) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
 
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = imageData.width;
+  canvas.height = imageData.height;
 
-  ctx.drawImage(imageData, 0, 0, width, height);
+  // Draw the original image data onto the canvas
+  const imageBitmap = await createImageBitmap(new ImageData(imageData.data, imageData.width, imageData.height));
+  ctx.drawImage(imageBitmap, 0, 0);
 
-  return ctx.getImageData(0, 0, width, height);
+  // Create a new canvas for the resized image
+  const resizedCanvas = document.createElement('canvas');
+  const resizedCtx = resizedCanvas.getContext('2d');
+
+  resizedCanvas.width = width;
+  resizedCanvas.height = height;
+
+  // Draw the resized image onto the new canvas
+  resizedCtx.drawImage(canvas, 0, 0, width, height);
+
+  return resizedCtx.getImageData(0, 0, width, height);
 }
 
 function blobToBase64(blob) {
