@@ -105,90 +105,42 @@ function readFileAsDataURL(file) {
   });
 }
 
-async function handleFileDrop(event) {
-  event.preventDefault();
-  const files = event.dataTransfer ? event.dataTransfer.files : event.target.files;
-  const fileInput = document.querySelector('input[name="file"]');
-  fileInput.files = files; // Set the files to the input element for form submission handling
-  
+async function initForm() {
+  const form = document.querySelector('form');
+  const inputFile = form.querySelector('input[name="file"]');
   const imageSizeBefore = document.querySelector('#imageSizeBefore');
-  const imageSizeBeforeUpload = Array.from(files).reduce((acc, file) => acc + file.size, 0) / 1024;
-  imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload.toFixed(2)} KB`;
+  const imageSizeAfter = document.querySelector('#imageSizeAfter');
+  const imageSizeDifference = document.querySelector('#imageSizeDifference');
 
-  const form = document.querySelector('#image-form');
-  await processFiles(form, files); // Process files instead of submitting the form
-}
+  inputFile.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
+    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+  });
 
-async function processFiles(form, files) {
-  try {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
     const formData = new FormData(form);
+    const file = formData.get('file');
+    const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
     const outputType = formData.get('outputType');
+    const fileBuffer = await file.arrayBuffer();
 
-    const imageSizeBeforeConversion = Array.from(files).reduce((acc, file) => acc + file.size, 0) / 1024;
+    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
 
-    let totalBuffer = new Uint8Array();
+    const imageBuffer = await convert(sourceType, outputType, fileBuffer);
 
-    for (const file of files) {
-      const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
-      const fileBuffer = await file.arrayBuffer();
-      const imageBuffer = await convert(sourceType, outputType, fileBuffer);
-
-      const newBuffer = new Uint8Array(totalBuffer.length + imageBuffer.byteLength);
-      newBuffer.set(totalBuffer);
-      newBuffer.set(new Uint8Array(imageBuffer), totalBuffer.length);
-      totalBuffer = newBuffer;
-    }
-
-    const imageBlob = new Blob([totalBuffer], { type: `image/${outputType}` });
+    const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
     const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
 
     const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
     const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
     const sign = difference >= 0 ? '+' : '-';
 
-    const imageSizeAfter = document.querySelector('#imageSizeAfter');
-    const imageSizeDifference = document.querySelector('#imageSizeDifference');
-
     imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
     imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
 
-    await showOutput(totalBuffer.buffer, outputType);
-  } catch (error) {
-    console.error('Error processing files:', error);
-  }
-}
-
-function initDragAndDrop() {
-  const dropZone = document.getElementById('file-drop-zone');
-
-  dropZone.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-  });
-
-  dropZone.addEventListener('drop', handleFileDrop);
-  dropZone.addEventListener('click', () => {
-    const fileInput = dropZone.querySelector('input[type="file"]');
-    fileInput.click();
-  });
-
-  const fileInput = dropZone.querySelector('input[type="file"]');
-  fileInput.addEventListener('change', handleFileDrop);
-}
-
-async function initForm() {
-  initDragAndDrop();
-
-  const form = document.querySelector('#image-form');
-
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault(); // Prevent the default form submission
-    const files = form.querySelector('input[name="file"]').files;
-    await processFiles(form, files); // Process files manually
+    showOutput(imageBuffer, outputType);
   });
 }
 
