@@ -1,41 +1,51 @@
-import * as avif from 'https://unpkg.com/@jsquash/avif@latest?module';
-import * as jpeg from 'https://unpkg.com/@jsquash/jpeg@latest?module';
-import * as jxl from 'https://unpkg.com/@jsquash/jxl@latest?module';
-import * as png from 'https://unpkg.com/@jsquash/png@latest?module';
-import * as webp from 'https://unpkg.com/@jsquash/webp@latest?module';
+async function convert(sourceType, outputType, fileBuffer) {
+  let decoder, encoder;
 
-async function decode (sourceType, fileBuffer) {
   switch (sourceType) {
     case 'avif':
-      return await avif.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      break;
     case 'jpeg':
-      return await jpeg.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      break;
     case 'jxl':
-      return await jxl.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      break;
     case 'png':
-      return await png.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      break;
     case 'webp':
-      return await webp.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      break;
     default:
       throw new Error(`Unknown source type: ${sourceType}`);
   }
-}
 
-async function encode (outputType, imageData) {
   switch (outputType) {
     case 'avif':
-      return await avif.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      break;
     case 'jpeg':
-      return await jpeg.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      break;
     case 'jxl':
-      return await jxl.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      break;
     case 'png':
-      return await png.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      break;
     case 'webp':
-      return await webp.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      break;
     default:
       throw new Error(`Unknown output type: ${outputType}`);
   }
+
+  const decoderModule = await decoder;
+  const encoderModule = await encoder;
+
+  const imageData = await decoderModule.decode(fileBuffer);
+  return encoderModule.encode(imageData);
 }
 
 async function convert (sourceType, outputType, fileBuffer) {
