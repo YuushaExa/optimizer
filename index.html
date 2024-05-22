@@ -5,168 +5,271 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>jSquash with Rollup example</title>
-</head>
-<body>
-  <h1>Image Converter</h1>
-  <form id="image-form">
-    <label for="file-drop-zone">Drag and drop your images here:</label>
-    <div id="file-drop-zone" class="drop-zone">
-      <p>Drop files here or click to upload.</p>
-      <input type="file" name="file" accept=".avif,.jxl,image/*" multiple style="display:none;">
-    </div>
-    <p>Choose output image type:</p>
-    <div>
-      <label>
-        <input type="radio" name="outputType" value="avif"> AVIF
-      </label>
-      <label>
-        <input type="radio" name="outputType" value="jpeg"> JPEG
-      </label>
-      <label>
-        <input type="radio" name="outputType" value="jxl"> JPEG XL
-      </label>
-      <label>
-        <input type="radio" name="outputType" value="png"> PNG
-      </label>
-      <label>
-        <input type="radio" name="outputType" value="webp"> WebP
-      </label>
-    </div>
-    <button>Convert</button>
-  </form>
-  <p>Output Image (Right click to save)</p>
-  <p id="imageSizeBefore"></p>
-  <p id="imageSizeAfter"></p>
-  <p id="imageSizeDifference"></p>
-  <div id="preview"></div>
-
-  <script type="module" src="./main.js"></script>
   <style>
     * {box-sizing: border-box;}
 
-    .drop-zone {
-      border: 2px dashed #ccc;
-      border-radius: 5px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    .drop-zone.dragover {
-      border-color: #000;
-    }
-
     .img-comp-container {
       position: relative;
-      height: 1200px; /*should be the same height as the images*/
+      height: 200px;
     }
 
     .img-comp-img {
       position: absolute;
       width: auto;
       height: auto;
-      overflow:hidden;
+      overflow: hidden;
     }
 
     .img-comp-img img {
-      display:block;
-      vertical-align:middle;
+      display: block;
+      vertical-align: middle;
     }
 
     .img-comp-slider {
       position: absolute;
       z-index: 9;
-      right: calc(50% - 1px);
-      bottom: 0;
-      width: 2px;
-      background-color: rgba(255,255,255,.5);
-      border-top: 0;
-      border-bottom: 0;
-      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
       cursor: ew-resize;
-      top: 0;
+      width: 40px;
+      height: 40px;
+      background-color: #2196F3;
+      opacity: 0.7;
+      border-radius: 50%;
     }
-    .img-comp-slider-button {
-      position: absolute;
-      top: calc(50% - 40px);
-      left: -4px;
-      width: 10px;
-      background-color: #ddd;
-      border: 4px solid #fff;
-      height: 80px;
+
+    .dragover {
+      border: 2px dashed #007bff;
+    }
+
+    #file-drop-zone {
+      border: 2px dashed #ccc;
+      padding: 20px;
       text-align: center;
-      padding: 0;
-      outline: 0;
-      cursor: ew-resize;
-      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
     }
   </style>
-  <script>
-    function initComparisons() {
-      var overlays = document.getElementsByClassName("img-comp-overlay");
-      for (var i = 0; i < overlays.length; i++) {
-        compareImages(overlays[i]);
-      }
+</head>
+<body>
+  <h1>Image Format Conversion</h1>
+  <form id="image-form">
+    <div id="file-drop-zone">
+      <p>Drop your files here or click to select files.</p>
+      <input type="file" name="file" style="display: none;" multiple>
+    </div>
+    <label for="outputType">Convert to:</label>
+    <select name="outputType" id="outputType">
+      <option value="avif">AVIF</option>
+      <option value="jpeg">JPEG</option>
+      <option value="jxl">JXL</option>
+      <option value="png">PNG</option>
+      <option value="webp">WebP</option>
+    </select>
+    <button type="submit">Convert</button>
+  </form>
+  <p id="imageSizeBefore">Image Size Before Conversion: N/A</p>
+  <p id="imageSizeAfter">Image Size After Conversion: N/A</p>
+  <p id="imageSizeDifference">Percent Difference: N/A</p>
+  <div class="img-comp-container"></div>
 
-      function compareImages(img) {
-        var slider, button, clicked = 0, w, h;
-        w = img.offsetWidth;
-        h = img.offsetHeight;
+  <script type="module">
+async function decode(sourceType, fileBuffer) {
+  let decoder;
+  switch (sourceType) {
+    case 'avif':
+      decoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      return await decoder.decode(fileBuffer);
+    case 'jpeg':
+      decoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      return await decoder.decode(fileBuffer);
+    case 'jxl':
+      decoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      return await decoder.decode(fileBuffer);
+    case 'png':
+      decoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      return await decoder.decode(fileBuffer);
+    case 'webp':
+      decoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      return await decoder.decode(fileBuffer);
+    default:
+      throw new Error(`Unknown source type: ${sourceType}`);
+  }
+}
 
-        img.style.width = (w / 2) + "px";
+async function encode(outputType, imageData) {
+  let encoder;
+  switch (outputType) {
+    case 'avif':
+      encoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      return await encoder.encode(imageData);
+    case 'jpeg':
+      encoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      return await encoder.encode(imageData);
+    case 'jxl':
+      encoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      return await encoder.encode(imageData);
+    case 'png':
+      encoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      return await encoder.encode(imageData);
+    case 'webp':
+      encoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      return await encoder.encode(imageData);
+    default:
+      throw new Error(`Unknown output type: ${outputType}`);
+  }
+}
 
-        slider = document.createElement("DIV");
-        slider.setAttribute("class", "img-comp-slider");
+async function convert(sourceType, outputType, fileBuffer) {
+  const imageData = await decode(sourceType, fileBuffer);
+  return encode(outputType, imageData);
+}
 
-        button = document.createElement("DIV");
-        button.setAttribute("class", "img-comp-slider-button");
+function blobToBase64(blob) {
+  return new Promise((resolve, _) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
 
-        slider.appendChild(button);
+async function showOutput(imageBuffer, outputType) {
+  const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
+  const base64String = await blobToBase64(imageBlob);
 
-        img.parentElement.insertBefore(slider, img);
+  const inputFile = document.querySelector('input[name="file"]');
+  const oldImgSrc = await readFileAsDataURL(inputFile.files[0]);
 
-        slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
+  let comparisonContainer = document.querySelector('.img-comp-container');
+  if (!comparisonContainer) {
+    comparisonContainer = document.createElement('div');
+    comparisonContainer.classList.add('img-comp-container');
+    document.body.appendChild(comparisonContainer);
+  }
 
-        slider.addEventListener("mousedown", slideReady);
-        window.addEventListener("mouseup", slideFinish);
-        slider.addEventListener("touchstart", slideReady);
-        window.addEventListener("touchend", slideFinish);
+  // Clear previous content
+  comparisonContainer.innerHTML = '';
 
-        function slideReady(e) {
-          e.preventDefault();
-          clicked = 1;
-          window.addEventListener("mousemove", slideMove);
-          window.addEventListener("touchmove", slideMove);
-        }
+  const oldImageContainer = document.createElement('div');
+  oldImageContainer.classList.add('img-comp-img');
+  const oldImg = document.createElement('img');
+  oldImg.src = oldImgSrc;
+  oldImg.width = 1300;
+  oldImg.height = 1200;
+  oldImageContainer.appendChild(oldImg);
 
-        function slideFinish() {
-          clicked = 0;
-        }
+  const newImageContainer = document.createElement('div');
+  newImageContainer.classList.add('img-comp-img', 'img-comp-overlay');
+  const newImg = document.createElement('img');
+  newImg.src = base64String;
+  newImg.width = 1300;
+  newImg.height = 1200;
+  newImageContainer.appendChild(newImg);
 
-        function slideMove(e) {
-          if (!clicked) return;
-          var pos = getCursorPos(e);
-          if (pos < 0) pos = 0;
-          if (pos > w) pos = w;
-          slide(pos);
-        }
+  comparisonContainer.appendChild(oldImageContainer);
+  comparisonContainer.appendChild(newImageContainer);
 
-        function getCursorPos(e) {
-          e = (e.changedTouches) ? e.changedTouches[0] : e;
-          var rect = img.getBoundingClientRect();
-          var x = e.pageX - rect.left - window.pageXOffset;
-          return x;
-        }
+  initComparisons();
+}
 
-        function slide(x) {
-          img.style.width = x + "px";
-          slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
-        }
-      }
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFileDrop(event) {
+  event.preventDefault();
+  const files = event.dataTransfer ? event.dataTransfer.files : event.target.files;
+  const fileInput = document.querySelector('input[name="file"]');
+  fileInput.files = files; // Set the files to the input element for form submission handling
+  
+  const imageSizeBefore = document.querySelector('#imageSizeBefore');
+  const imageSizeBeforeUpload = Array.from(files).reduce((acc, file) => acc + file.size, 0) / 1024;
+  imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload.toFixed(2)} KB`;
+
+  // Process files directly without submitting the form
+  await processFiles(files);
+}
+
+async function processFiles(files) {
+  try {
+    const form = document.querySelector('#image-form');
+    const formData = new FormData(form);
+    const outputType = formData.get('outputType');
+
+    const imageSizeBeforeConversion = Array.from(files).reduce((acc, file) => acc + file.size, 0) / 1024;
+
+    let totalBuffer = new Uint8Array();
+
+    for (const file of files) {
+      const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
+      const fileBuffer = await file.arrayBuffer();
+      const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+
+      const newBuffer = new Uint8Array(totalBuffer.length + imageBuffer.byteLength);
+      newBuffer.set(totalBuffer);
+      newBuffer.set(new Uint8Array(imageBuffer), totalBuffer.length);
+      totalBuffer = newBuffer;
     }
 
-    window.onload = initComparisons;
+    const imageBlob = new Blob([totalBuffer], { type: `image/${outputType}` });
+    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
 
+    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
+    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
+    const sign = difference >= 0 ? '+' : '-';
+
+    const imageSizeAfter = document.querySelector('#imageSizeAfter');
+    const imageSizeDifference = document.querySelector('#imageSizeDifference');
+
+    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
+    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
+
+    await showOutput(totalBuffer.buffer, outputType);
+  } catch (error) {
+    console.error('Error processing files:', error);
+  }
+}
+
+function initDragAndDrop() {
+  const dropZone = document.getElementById('file-drop-zone');
+
+  dropZone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', handleFileDrop);
+  dropZone.addEventListener('click', () => {
+    const fileInput = dropZone.querySelector('input[type="file"]');
+    fileInput.click();
+  });
+
+  const fileInput = dropZone.querySelector('input[type="file"]');
+  fileInput.addEventListener('change', handleFileDrop);
+}
+
+async function initForm() {
+  initDragAndDrop();
+
+  const form = document.querySelector('#image-form');
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent the default form submission
+    const files = form.querySelector('input[name="file"]').files;
+    await processFiles(files); // Process files manually
+  });
+}
+
+async function main() {
+  initForm();
+}
+
+main();
   </script>
 </body>
 </html>
