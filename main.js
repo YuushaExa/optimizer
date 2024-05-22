@@ -51,16 +51,6 @@ function blobToBase64(blob) {
   });
 }
 
-async function showPreview(imageBuffer, outputType) {
-const preview = document.querySelector('#preview');
-  const imageBlob1 = new Blob([imageBuffer], { type: `image/${outputType}` });
-  const base64String1 = await blobToBase64(imageBlob1);
-  const previewImg = document.createElement('img');
-  previewImg.src = base64String1;
-  preview.innerHTML = '';
-  preview.appendChild(previewImg);
-}
-
   
 async function showOutput(imageBuffer, outputType) {
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
