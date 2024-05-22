@@ -5,14 +5,74 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>jSquash with Rollup example</title>
+  <style>
+    * { box-sizing: border-box; }
+    .img-comp-container {
+      position: relative;
+      height: 1200px; /* should be the same height as the images */
+    }
+    .img-comp-img {
+      position: absolute;
+      width: auto;
+      height: auto;
+      overflow: hidden;
+    }
+    .img-comp-img img {
+      display: block;
+      vertical-align: middle;
+    }
+    .img-comp-slider {
+      position: absolute;
+      z-index: 9;
+      right: calc(50% - 1px);
+      bottom: 0;
+      width: 2px;
+      background-color: rgba(255, 255, 255, .5);
+      border-top: 0;
+      border-bottom: 0;
+      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
+      cursor: ew-resize;
+      top: 0;
+    }
+    .img-comp-slider-button {
+      position: absolute;
+      top: calc(50% - 40px);
+      left: -4px;
+      width: 10px;
+      background-color: #ddd;
+      border: 4px solid #fff;
+      height: 80px;
+      text-align: center;
+      padding: 0;
+      outline: 0;
+      cursor: ew-resize;
+      box-shadow: 0 0 2px rgb(0 0 0 / 50%);
+    }
+    .drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      color: #aaa;
+      margin-bottom: 20px;
+    }
+    .drop-zone.dragover {
+      border-color: #000;
+      color: #000;
+    }
+    input[type="file"] {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <h1>Image Converter</h1>
   <form>
-    <label>
-      Choose your source image:
-      <input type="file" name="file" accept=".avif,.jxl,image/*">
-    </label>
+    <div class="drop-zone" id="drop-zone">
+      Drag & drop your image here or <label for="file-upload" style="cursor: pointer; color: blue; text-decoration: underline;">choose a file</label>.
+      <input type="file" id="file-upload" name="file" accept=".avif,.jxl,image/*">
+    </div>
     <p>Choose output image type:</p>
     <div>
       <label>
@@ -40,120 +100,5 @@
   <div id="preview"></div>
 
   <script type="module" src="./main.js"></script>
-  <style>
-* {box-sizing: border-box;}
-
-.img-comp-container {
-  position: relative;
-  height: 1200px; /*should be the same height as the images*/
-}
-
-.img-comp-img {
-  position: absolute;
-  width: auto;
-  height: auto;
-  overflow:hidden;
-}
-
-.img-comp-img img {
-  display:block;
-  vertical-align:middle;
-}
-
-.img-comp-slider {
-  position: absolute;
-  z-index: 9;
-  right: calc(50% - 1px);
-  bottom: 0;
-  width: 2px;
-  background-color: rgba(255,255,255,.5);
-  border-top: 0;
-  border-bottom: 0;
-  box-shadow: 0 0 2px rgb(0 0 0 / 50%);
-  cursor: ew-resize;
-  top: 0;
-}
-.img-comp-slider-button {
-  position: absolute;
-  top: calc(50% - 40px);
-  left: -4px;
-  width: 10px;
-  background-color: #ddd;
-  border: 4px solid #fff;
-  height: 80px;
-  text-align: center;
-  padding: 0;
-  outline: 0;
-  cursor: ew-resize;
-  box-shadow: 0 0 2px rgb(0 0 0 / 50%);
-}
-</style>
-<script>
-function initComparisons() {
-  var overlays = document.getElementsByClassName("img-comp-overlay");
-  for (var i = 0; i < overlays.length; i++) {
-    compareImages(overlays[i]);
-  }
-
-  function compareImages(img) {
-    var slider, button, clicked = 0, w, h;
-    w = img.offsetWidth;
-    h = img.offsetHeight;
-
-    img.style.width = (w / 2) + "px";
-
-    slider = document.createElement("DIV");
-    slider.setAttribute("class", "img-comp-slider");
-
-    button = document.createElement("DIV");
-    button.setAttribute("class", "img-comp-slider-button");
-
-    slider.appendChild(button);
-
-    img.parentElement.insertBefore(slider, img);
-
-    slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
-
-    slider.addEventListener("mousedown", slideReady);
-    window.addEventListener("mouseup", slideFinish);
-    slider.addEventListener("touchstart", slideReady);
-    window.addEventListener("touchend", slideFinish);
-
-    function slideReady(e) {
-      e.preventDefault();
-      clicked = 1;
-      window.addEventListener("mousemove", slideMove);
-      window.addEventListener("touchmove", slideMove);
-    }
-
-    function slideFinish() {
-      clicked = 0;
-    }
-
-    function slideMove(e) {
-      if (!clicked) return;
-      var pos = getCursorPos(e);
-      if (pos < 0) pos = 0;
-      if (pos > w) pos = w;
-      slide(pos);
-    }
-
-    function getCursorPos(e) {
-      e = (e.changedTouches) ? e.changedTouches[0] : e;
-      var rect = img.getBoundingClientRect();
-      var x = e.pageX - rect.left - window.pageXOffset;
-      return x;
-    }
-
-    function slide(x) {
-      img.style.width = x + "px";
-      slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px";
-    }
-  }
-}
-
-window.onload = initComparisons;
-
-</script>
 </body>
 </html>
