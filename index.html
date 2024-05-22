@@ -8,11 +8,11 @@
 </head>
 <body>
   <h1>Image Converter</h1>
+  <div class="drag-drop-area" id="drag-drop-area">
+    Drag &amp; Drop your images here or click to select
+    <input type="file" id="file-input" accept=".avif,.jxl,image/*" multiple="" class="hidden">
+  </div>
   <form>
-    <label>
-      Choose your source image:
-      <input type="file" name="file" accept=".avif,.jxl,image/*">
-    </label>
     <p>Choose output image type:</p>
     <div>
       <label>
@@ -87,6 +87,18 @@
   cursor: ew-resize;
   box-shadow: 0 0 2px rgb(0 0 0 / 50%);
 }
+    .drag-drop-area {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    }
 </style>
 <script>
 function initComparisons() {
