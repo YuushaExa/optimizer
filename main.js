@@ -58,6 +58,11 @@ function blobToBase64(blob) {
 }
 
 async function showOutput(imageBuffer, outputType) {
+  const existingContainer = document.querySelector('.img-comp-container');
+  if (existingContainer) {
+    existingContainer.remove();
+  }
+
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
 
@@ -90,6 +95,7 @@ async function showOutput(imageBuffer, outputType) {
 
   initComparisons();
 }
+
 
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
