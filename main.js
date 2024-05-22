@@ -17,7 +17,7 @@ async function decode(sourceType, fileBuffer) {
       decoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
       return await decoder.decode(fileBuffer);
     default:
-      throw new Error(`Unknown source type: ${sourceType}`);
+      throw new Error(`Unsupported source type: ${sourceType}`);
   }
 }
 
@@ -40,7 +40,7 @@ async function encode(outputType, imageData) {
       encoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
       return await encoder.encode(imageData);
     default:
-      throw new Error(`Unknown output type: ${outputType}`);
+      throw new Error(`Unsupported output type: ${outputType}`);
   }
 }
 
@@ -50,9 +50,10 @@ async function convert(sourceType, outputType, fileBuffer) {
 }
 
 function blobToBase64(blob) {
-  return new Promise((resolve, _) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
 }
@@ -114,33 +115,46 @@ async function initForm() {
 
   inputFile.addEventListener('change', async (event) => {
     const file = event.target.files[0];
-    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
-    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+    if (file) {
+      const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
+      imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+    }
   });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const formData = new FormData(form);
-    const file = formData.get('file');
-    const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
-    const outputType = formData.get('outputType');
-    const fileBuffer = await file.arrayBuffer();
 
-    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.textContent = 'Processing...';
+    form.appendChild(loadingIndicator);
 
-    const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+    try {
+      const formData = new FormData(form);
+      const file = formData.get('file');
+      const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
+      const outputType = formData.get('outputType');
+      const fileBuffer = await file.arrayBuffer();
 
-    const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
+      const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
 
-    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
-    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
-    const sign = difference >= 0 ? '+' : '-';
+      const imageBuffer = await convert(sourceType, outputType, fileBuffer);
 
-    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
-    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
+      const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
+      const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
 
-    showOutput(imageBuffer, outputType);
+      const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
+      const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
+      const sign = difference >= 0 ? '+' : '-';
+
+      imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
+      imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
+
+      await showOutput(imageBuffer, outputType);
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      form.removeChild(loadingIndicator);
+    }
   });
 }
 
