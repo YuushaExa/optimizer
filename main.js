@@ -1,44 +1,50 @@
-import * as avif from 'https://unpkg.com/@jsquash/avif@latest?module';
-import * as jpeg from 'https://unpkg.com/@jsquash/jpeg@latest?module';
-import * as jxl from 'https://unpkg.com/@jsquash/jxl@latest?module';
-import * as png from 'https://unpkg.com/@jsquash/png@latest?module';
-import * as webp from 'https://unpkg.com/@jsquash/webp@latest?module';
-
-async function decode (sourceType, fileBuffer) {
+async function decode(sourceType, fileBuffer) {
+  let decoder;
   switch (sourceType) {
     case 'avif':
-      return await avif.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'jpeg':
-      return await jpeg.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'jxl':
-      return await jxl.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'png':
-      return await png.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      return await decoder.decode(fileBuffer);
     case 'webp':
-      return await webp.decode(fileBuffer);
+      decoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      return await decoder.decode(fileBuffer);
     default:
       throw new Error(`Unknown source type: ${sourceType}`);
   }
 }
 
-async function encode (outputType, imageData) {
+async function encode(outputType, imageData) {
+  let encoder;
   switch (outputType) {
     case 'avif':
-      return await avif.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/avif@latest?module');
+      return await encoder.encode(imageData);
     case 'jpeg':
-      return await jpeg.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/jpeg@latest?module');
+      return await encoder.encode(imageData);
     case 'jxl':
-      return await jxl.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/jxl@latest?module');
+      return await encoder.encode(imageData);
     case 'png':
-      return await png.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/png@latest?module');
+      return await encoder.encode(imageData);
     case 'webp':
-      return await webp.encode(imageData);
+      encoder = await import('https://unpkg.com/@jsquash/webp@latest?module');
+      return await encoder.encode(imageData);
     default:
       throw new Error(`Unknown output type: ${outputType}`);
   }
 }
 
-async function convert (sourceType, outputType, fileBuffer) {
+async function convert(sourceType, outputType, fileBuffer) {
   const imageData = await decode(sourceType, fileBuffer);
   return encode(outputType, imageData);
 }
@@ -51,26 +57,24 @@ function blobToBase64(blob) {
   });
 }
 
-  
 async function showOutput(imageBuffer, outputType) {
   const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
   const base64String = await blobToBase64(imageBlob);
-  // Get the file input element
+
   const inputFile = document.querySelector('input[name="file"]');
   const oldImgSrc = await readFileAsDataURL(inputFile.files[0]);
-  // Create container for comparison
+
   const comparisonContainer = document.createElement('div');
   comparisonContainer.classList.add('img-comp-container');
-  // Create old image container
+
   const oldImageContainer = document.createElement('div');
   oldImageContainer.classList.add('img-comp-img');
   const oldImg = document.createElement('img');
-  oldImg.src = oldImgSrc; // Use the data URL of the old image
+  oldImg.src = oldImgSrc;
   oldImg.width = 1300;
   oldImg.height = 1200;
   oldImageContainer.appendChild(oldImg);
 
-  // Create new image container
   const newImageContainer = document.createElement('div');
   newImageContainer.classList.add('img-comp-img', 'img-comp-overlay');
   const newImg = document.createElement('img');
@@ -79,16 +83,14 @@ async function showOutput(imageBuffer, outputType) {
   newImg.height = 1200;
   newImageContainer.appendChild(newImg);
 
-  // Append old and new image containers to comparison container
   comparisonContainer.appendChild(oldImageContainer);
   comparisonContainer.appendChild(newImageContainer);
 
-  // Append comparison container to document body or any desired container
   document.body.appendChild(comparisonContainer);
 
-  // Initialize comparisons
   initComparisons();
 }
+
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -107,7 +109,7 @@ async function initForm() {
 
   inputFile.addEventListener('change', async (event) => {
     const file = event.target.files[0];
-    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2); // Size in KB
+    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
     imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
   });
 
@@ -119,28 +121,20 @@ async function initForm() {
     const outputType = formData.get('outputType');
     const fileBuffer = await file.arrayBuffer();
 
-    // Calculate image size before conversion
-    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2); // Size in KB
+    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
 
-    // Convert the image
     const imageBuffer = await convert(sourceType, outputType, fileBuffer);
 
-    // Calculate image size after conversion
     const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2); // Size in KB
+    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
 
-    // Calculate percent difference
     const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
     const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
-
-    // Determine sign of the difference
     const sign = difference >= 0 ? '+' : '-';
 
-    // Display sizes and percent difference
     imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
     imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
 
-    // Show output
     showOutput(imageBuffer, outputType);
   });
 }
