@@ -87,17 +87,25 @@
   cursor: ew-resize;
   box-shadow: 0 0 2px rgb(0 0 0 / 50%);
 }
-    .drag-drop-area {
-    width: 100%;
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  .drag-drop-area {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .drag-drop-area.dragover {
+      background-color: #f0f0f0;
+    }
+
+    .hidden {
+      display: none;
     }
 </style>
 <script>
