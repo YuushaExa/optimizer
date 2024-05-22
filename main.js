@@ -105,42 +105,32 @@ function readFileAsDataURL(file) {
   });
 }
 
-async function initForm() {
-  const form = document.querySelector('form');
-  const inputFile = form.querySelector('input[name="file"]');
-  const imageSizeBefore = document.querySelector('#imageSizeBefore');
-  const imageSizeAfter = document.querySelector('#imageSizeAfter');
-  const imageSizeDifference = document.querySelector('#imageSizeDifference');
+function initForm() {
+  const dragDropArea = document.getElementById('drag-drop-area');
+  const fileInput = document.getElementById('file-input');
+  const convertButton = document.getElementById('convert-button');
 
-  inputFile.addEventListener('change', async (event) => {
-    const file = event.target.files[0];
-    const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
-    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+  dragDropArea.addEventListener('click', () => fileInput.click());
+
+  dragDropArea.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dragDropArea.classList.add('dragover');
   });
 
-  form.addEventListener('submit', async (event) => {
+  dragDropArea.addEventListener('dragleave', () => dragDropArea.classList.remove('dragover'));
+
+  dragDropArea.addEventListener('drop', (event) => {
     event.preventDefault();
-    const formData = new FormData(form);
-    const file = formData.get('file');
-    const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
-    const outputType = formData.get('outputType');
-    const fileBuffer = await file.arrayBuffer();
+    dragDropArea.classList.remove('dragover');
+    handleFiles(event.dataTransfer.files);
+  });
 
-    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
+  fileInput.addEventListener('change', (event) => {
+    handleFiles(event.target.files);
+  });
 
-    const imageBuffer = await convert(sourceType, outputType, fileBuffer);
-
-    const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
-
-    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
-    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
-    const sign = difference >= 0 ? '+' : '-';
-
-    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
-    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
-
-    showOutput(imageBuffer, outputType);
+  convertButton.addEventListener('click', () => {
+    fileInput.click();
   });
 }
 
