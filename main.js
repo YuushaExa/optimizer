@@ -105,42 +105,69 @@ function readFileAsDataURL(file) {
   });
 }
 
+async function handleFile(file) {
+  const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
+  const outputType = document.querySelector('input[name="outputType"]:checked').value;
+  const fileBuffer = await file.arrayBuffer();
+
+  const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
+
+  const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+
+  const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
+  const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
+
+  const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
+  const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
+  const sign = difference >= 0 ? '+' : '-';
+
+  document.querySelector('#imageSizeBefore').textContent = `Image Size Before Conversion: ${imageSizeBeforeConversion} KB`;
+  document.querySelector('#imageSizeAfter').textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
+  document.querySelector('#imageSizeDifference').textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
+
+  showOutput(imageBuffer, outputType);
+}
+
 async function initForm() {
   const form = document.querySelector('form');
   const inputFile = form.querySelector('input[name="file"]');
-  const imageSizeBefore = document.querySelector('#imageSizeBefore');
-  const imageSizeAfter = document.querySelector('#imageSizeAfter');
-  const imageSizeDifference = document.querySelector('#imageSizeDifference');
+  const dropZone = document.getElementById('drop-zone');
 
   inputFile.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     const imageSizeBeforeUpload = (file.size / 1024).toFixed(2);
-    imageSizeBefore.textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
+    document.querySelector('#imageSizeBefore').textContent = `Image Size Before Conversion: ${imageSizeBeforeUpload} KB`;
   });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const formData = new FormData(form);
-    const file = formData.get('file');
-    const sourceType = file.name.endsWith('jxl') ? 'jxl' : file.type.replace('image/', '');
-    const outputType = formData.get('outputType');
-    const fileBuffer = await file.arrayBuffer();
+    const file = inputFile.files[0];
+    if (file) {
+      handleFile(file);
+    }
+  });
 
-    const imageSizeBeforeConversion = (file.size / 1024).toFixed(2);
+  dropZone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.classList.add('dragover');
+  });
 
-    const imageBuffer = await convert(sourceType, outputType, fileBuffer);
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
 
-    const imageBlob = new Blob([imageBuffer], { type: `image/${outputType}` });
-    const imageSizeAfterConversion = (imageBlob.size / 1024).toFixed(2);
+  dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      inputFile.files = event.dataTransfer.files;
+      handleFile(file);
+    }
+  });
 
-    const difference = imageSizeAfterConversion - imageSizeBeforeConversion;
-    const percentDifference = ((difference / imageSizeBeforeConversion) * 100).toFixed(2);
-    const sign = difference >= 0 ? '+' : '-';
-
-    imageSizeAfter.textContent = `Image Size After Conversion: ${imageSizeAfterConversion} KB`;
-    imageSizeDifference.textContent = `Percent Difference: ${sign}${Math.abs(percentDifference)}%`;
-
-    showOutput(imageBuffer, outputType);
+  dropZone.addEventListener('click', () => {
+    inputFile.click();
   });
 }
 
